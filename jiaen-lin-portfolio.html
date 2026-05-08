@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jiaen Lin - Research Fellow | Bioinformatics & AI</title>
+  <meta name="description" content="Jiaen Lin – Research Fellow at Duke-NUS, specializing in multi-omics, single-cell RNA-seq, and machine learning for biomedical research.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,300..700;1,300..400&family=Inter:wght@300..700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <style>
+    /* === TOKENS === */
+    :root, [data-theme="light"] {
+      --text-xs:   clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+      --text-sm:   clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
+      --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+      --text-lg:   clamp(1.125rem, 1rem + 0.75vw, 1.5rem);
+      --text-xl:   clamp(1.5rem, 1.2rem + 1.25vw, 2.25rem);
+      --text-2xl:  clamp(2rem, 1.2rem + 2.5vw, 3.5rem);
+      --space-1:0.25rem;--space-2:0.5rem;--space-3:0.75rem;--space-4:1rem;
+      --space-5:1.25rem;--space-6:1.5rem;--space-8:2rem;--space-10:2.5rem;
+      --space-12:3rem;--space-16:4rem;--space-20:5rem;--space-24:6rem;
+      --color-bg:#f7f6f2;--color-surface:#f9f8f5;--color-surface-2:#fbfbf9;
+      --color-surface-offset:#f3f0ec;--color-divider:#dcd9d5;--color-border:#d4d1ca;
+      --color-text:#28251d;--color-text-muted:#7a7974;--color-text-faint:#bab9b4;
+      --color-primary:#01696f;--color-primary-hover:#0c4e54;
+      --color-primary-highlight:#cedcd8;
+      --font-display:'Source Serif 4', Georgia, serif;
+      --font-body:'Inter', 'Helvetica Neue', sans-serif;
+      --radius-sm:0.375rem;--radius-md:0.5rem;--radius-lg:0.75rem;
+      --shadow-sm:0 1px 2px oklch(0.2 0.01 80/0.06);
+      --shadow-md:0 4px 12px oklch(0.2 0.01 80/0.08);
+      --transition-interactive:180ms cubic-bezier(0.16,1,0.3,1);
+      --content-default:900px;
+    }
+    [data-theme="dark"] {
+      --color-bg:#171614;--color-surface:#1c1b19;--color-surface-2:#201f1d;
+      --color-surface-offset:#1d1c1a;--color-divider:#262523;--color-border:#393836;
+      --color-text:#cdccca;--color-text-muted:#797876;--color-text-faint:#5a5957;
+      --color-primary:#4f98a3;--color-primary-hover:#227f8b;
+      --color-primary-highlight:#313b3b;
+      --shadow-sm:0 1px 2px oklch(0 0 0/0.2);
+      --shadow-md:0 4px 12px oklch(0 0 0/0.3);
+    }
+    @media(prefers-color-scheme:dark){:root:not([data-theme]){
+      --color-bg:#171614;--color-surface:#1c1b19;--color-surface-2:#201f1d;
+      --color-surface-offset:#1d1c1a;--color-divider:#262523;--color-border:#393836;
+      --color-text:#cdccca;--color-text-muted:#797876;--color-text-faint:#5a5957;
+      --color-primary:#4f98a3;--color-primary-hover:#227f8b;--color-primary-highlight:#313b3b;
+    }}
+
+    /* === BASE === */
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{-webkit-font-smoothing:antialiased;scroll-behavior:smooth;scroll-padding-top:var(--space-16)}
+    body{min-height:100dvh;line-height:1.6;font-family:var(--font-body);font-size:var(--text-base);color:var(--color-text);background:var(--color-bg)}
+    img{display:block;max-width:100%;height:auto}
+    a{color:var(--color-primary);text-decoration:none;transition:color var(--transition-interactive)}
+    a:hover{color:var(--color-primary-hover)}
+    h1,h2,h3,h4{text-wrap:balance;line-height:1.2}
+    p,li{text-wrap:pretty;max-width:72ch}
+    button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
+    ul[role="list"]{list-style:none}
+    ::selection{background:oklch(from var(--color-primary) l c h/0.2);color:var(--color-text)}
+    :focus-visible{outline:2px solid var(--color-primary);outline-offset:3px;border-radius:var(--radius-sm)}
+
+    /* === LAYOUT === */
+    .container{max-width:var(--content-default);margin-inline:auto;padding-inline:var(--space-6)}
+
+    /* === NAV === */
+    nav{position:sticky;top:0;z-index:100;background:oklch(from var(--color-bg) l c h/0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--color-divider)}
+    .nav-inner{display:flex;align-items:center;justify-content:space-between;padding-block:var(--space-4);gap:var(--space-4)}
+    .nav-logo{display:flex;align-items:center;gap:var(--space-2);font-family:var(--font-display);font-weight:600;font-size:var(--text-base);color:var(--color-text);letter-spacing:-0.01em}
+    .nav-links{display:flex;align-items:center;gap:var(--space-6)}
+    .nav-links a{font-size:var(--text-sm);color:var(--color-text-muted);font-weight:500;transition:color var(--transition-interactive)}
+    .nav-links a:hover{color:var(--color-text)}
+    .theme-toggle{padding:var(--space-2);border-radius:var(--radius-md);color:var(--color-text-muted);transition:color var(--transition-interactive),background var(--transition-interactive)}
+    .theme-toggle:hover{color:var(--color-text);background:var(--color-surface-offset)}
+
+    /* === HERO === */
+    .hero{padding-block:clamp(var(--space-16),8vw,var(--space-24))}
+    .hero-grid{display:grid;grid-template-columns:1fr auto;gap:var(--space-12);align-items:start}
+    .hero-badge{display:inline-flex;align-items:center;gap:var(--space-2);font-size:var(--text-xs);font-weight:500;color:var(--color-primary);background:var(--color-primary-highlight);padding:var(--space-1) var(--space-3);border-radius:9999px;margin-bottom:var(--space-4);letter-spacing:0.03em;text-transform:uppercase}
+    .hero h1{font-family:var(--font-display);font-size:var(--text-2xl);font-weight:400;color:var(--color-text);letter-spacing:-0.02em;line-height:1.1;margin-bottom:var(--space-3)}
+    .hero-subtitle{font-size:var(--text-base);color:var(--color-text-muted);margin-bottom:var(--space-2);font-weight:400}
+    .hero-affiliation{font-size:var(--text-sm);color:var(--color-text-muted);margin-bottom:var(--space-6)}
+    .hero-desc{font-size:var(--text-base);color:var(--color-text-muted);line-height:1.7;max-width:58ch;margin-bottom:var(--space-8)}
+    .hero-links{display:flex;flex-wrap:wrap;gap:var(--space-3)}
+    .btn{display:inline-flex;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-5);border-radius:var(--radius-md);font-size:var(--text-sm);font-weight:500;transition:all var(--transition-interactive)}
+    .btn-primary{background:var(--color-primary);color:#fff}
+    .btn-primary:hover{background:var(--color-primary-hover);color:#fff}
+    .btn-ghost{border:1px solid var(--color-border);color:var(--color-text-muted)}
+    .btn-ghost:hover{border-color:var(--color-primary);color:var(--color-primary);background:var(--color-primary-highlight)}
+    .avatar-wrap{position:relative}
+    .avatar{width:160px;height:160px;border-radius:50%;object-fit:cover;border:3px solid var(--color-border);box-shadow:var(--shadow-md)}
+    .avatar-placeholder{width:160px;height:160px;border-radius:50%;background:var(--color-surface-offset);border:3px solid var(--color-border);display:flex;align-items:center;justify-content:center;color:var(--color-text-faint);box-shadow:var(--shadow-md)}
+
+    /* === SECTION COMMON === */
+    section{padding-block:clamp(var(--space-12),6vw,var(--space-20))}
+    section+section{border-top:1px solid var(--color-divider)}
+    .section-header{margin-bottom:var(--space-8)}
+    .section-label{font-size:var(--text-xs);font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--color-primary);margin-bottom:var(--space-2)}
+    .section-title{font-family:var(--font-display);font-size:var(--text-xl);font-weight:400;color:var(--color-text);letter-spacing:-0.01em}
+
+    /* === RESEARCH INTERESTS === */
+    .interests-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:var(--space-4)}
+    .interest-card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-5);transition:box-shadow var(--transition-interactive),border-color var(--transition-interactive)}
+    .interest-card:hover{box-shadow:var(--shadow-md);border-color:var(--color-primary-highlight)}
+    .interest-icon{width:36px;height:36px;color:var(--color-primary);margin-bottom:var(--space-3)}
+    .interest-title{font-weight:600;font-size:var(--text-base);color:var(--color-text);margin-bottom:var(--space-2)}
+    .interest-tags{display:flex;flex-wrap:wrap;gap:var(--space-1)}
+    .tag{font-size:var(--text-xs);padding:2px var(--space-2);border-radius:9999px;background:var(--color-surface-offset);color:var(--color-text-muted);border:1px solid var(--color-border)}
+
+    /* === NEWS === */
+    .news-list{display:flex;flex-direction:column;gap:var(--space-3)}
+    .news-item{display:grid;grid-template-columns:5rem 1fr;gap:var(--space-4);align-items:baseline;padding:var(--space-3) 0;border-bottom:1px solid var(--color-divider)}
+    .news-item:last-child{border-bottom:none}
+    .news-date{font-size:var(--text-xs);color:var(--color-text-faint);font-weight:500;white-space:nowrap}
+    .news-text{font-size:var(--text-sm);color:var(--color-text-muted);line-height:1.6}
+    .news-text strong{color:var(--color-text);font-weight:600}
+    .highlight-badge{display:inline-block;font-size:var(--text-xs);font-weight:600;color:var(--color-primary);background:var(--color-primary-highlight);padding:1px var(--space-2);border-radius:9999px;margin-left:var(--space-2)}
+
+    /* === PUBLICATIONS === */
+    .pub-year-group{margin-bottom:var(--space-10)}
+    .pub-year{font-family:var(--font-display);font-size:var(--text-lg);font-weight:500;color:var(--color-text-faint);margin-bottom:var(--space-4);padding-bottom:var(--space-2);border-bottom:1px solid var(--color-divider)}
+    .pub-list{display:flex;flex-direction:column;gap:var(--space-4)}
+    .pub-item{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-5);transition:box-shadow var(--transition-interactive)}
+    .pub-item:hover{box-shadow:var(--shadow-sm)}
+    .pub-venue{font-size:var(--text-xs);font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--color-primary);margin-bottom:var(--space-2)}
+    .pub-title{font-size:var(--text-base);font-weight:600;color:var(--color-text);line-height:1.4;margin-bottom:var(--space-2)}
+    .pub-authors{font-size:var(--text-sm);color:var(--color-text-muted)}
+    .pub-authors .me{font-weight:700;color:var(--color-text)}
+    .pub-links{display:flex;gap:var(--space-2);margin-top:var(--space-3);flex-wrap:wrap}
+    .pub-link{font-size:var(--text-xs);padding:2px var(--space-3);border:1px solid var(--color-border);border-radius:9999px;color:var(--color-text-muted);transition:all var(--transition-interactive)}
+    .pub-link:hover{border-color:var(--color-primary);color:var(--color-primary);background:var(--color-primary-highlight)}
+
+    /* === EXPERIENCE / EDUCATION === */
+    .timeline{display:flex;flex-direction:column;gap:var(--space-6)}
+    .timeline-item{display:grid;grid-template-columns:auto 1fr;gap:var(--space-5);align-items:start}
+    .timeline-dot{width:10px;height:10px;border-radius:50%;background:var(--color-primary);margin-top:6px;flex-shrink:0;position:relative}
+    .timeline-dot::before{content:'';position:absolute;top:9px;left:4px;width:2px;height:calc(100% + var(--space-6) - 9px);background:var(--color-divider)}
+    .timeline-item:last-child .timeline-dot::before{display:none}
+    .timeline-period{font-size:var(--text-xs);color:var(--color-text-faint);font-weight:500;white-space:nowrap;margin-bottom:var(--space-1)}
+    .timeline-role{font-weight:600;font-size:var(--text-base);color:var(--color-text)}
+    .timeline-org{font-size:var(--text-sm);color:var(--color-primary)}
+    .timeline-desc{font-size:var(--text-sm);color:var(--color-text-muted);margin-top:var(--space-1);line-height:1.6}
+
+    /* === SKILLS === */
+    .skills-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:var(--space-4)}
+    .skill-group{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-5)}
+    .skill-group-title{font-weight:600;font-size:var(--text-sm);color:var(--color-text);margin-bottom:var(--space-3)}
+    .skill-list{display:flex;flex-wrap:wrap;gap:var(--space-2)}
+
+    /* === CONTACT === */
+    .contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-12)}
+    .contact-desc{font-size:var(--text-base);color:var(--color-text-muted);line-height:1.7;margin-bottom:var(--space-6)}
+    .contact-links{display:flex;flex-direction:column;gap:var(--space-3)}
+    .contact-link{display:flex;align-items:center;gap:var(--space-3);font-size:var(--text-sm);color:var(--color-text-muted);padding:var(--space-3) var(--space-4);background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);transition:all var(--transition-interactive)}
+    .contact-link:hover{border-color:var(--color-primary);color:var(--color-primary);background:var(--color-primary-highlight)}
+    .contact-link svg{color:var(--color-primary);flex-shrink:0}
+
+    /* === FOOTER === */
+    footer{padding-block:var(--space-8);border-top:1px solid var(--color-divider);text-align:center;font-size:var(--text-xs);color:var(--color-text-faint)}
+
+    /* === MOBILE === */
+    @media(max-width:768px){
+      .hero-grid{grid-template-columns:1fr;gap:var(--space-8)}
+      .avatar-wrap{order:-1}
+      .avatar,.avatar-placeholder{width:100px;height:100px}
+      .contact-grid{grid-template-columns:1fr}
+      .nav-links a:not(:last-child){display:none}
+      .nav-links{gap:var(--space-4)}
+    }
+    @media(max-width:480px){
+      .interests-grid{grid-template-columns:1fr}
+      .skills-grid{grid-template-columns:1fr}
+      .news-item{grid-template-columns:1fr;gap:var(--space-1)}
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="container">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-label="JL monogram logo">
+          <rect width="28" height="28" rx="7" fill="var(--color-primary)"/>
+          <text x="5" y="21" font-family="Georgia, serif" font-size="16" font-weight="700" fill="white">JL</text>
+        </svg>
+        Jiaen Lin
+      </a>
+      <div class="nav-links">
+        <a href="#research">Research</a>
+        <a href="#news">News</a>
+        <a href="#publications">Publications</a>
+        <a href="#experience">Experience</a>
+        <a href="#contact">Contact</a>
+        <button class="theme-toggle" data-theme-toggle aria-label="Toggle theme">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="container">
+    <div class="hero-grid">
+      <div>
+        <div class="hero-badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg>
+          Research Fellow · Singapore
+        </div>
+        <h1>Jiaen Lin</h1>
+        <p class="hero-subtitle">Bioinformatician · Multi-Omics · AI for Biomedicine</p>
+        <p class="hero-affiliation">🎓 Duke-NUS Medical School · IBioMed Programme</p>
+        <p class="hero-desc">
+          I develop computational methods and machine learning models to integrate multi-omics data — transcriptomics, metabolomics, and single-cell RNA-seq — for biomarker discovery and disease mechanism research. My work spans metabolic syndrome, autism, heart failure (HFpEF), and neural stem cell biology.
+        </p>
+        <div class="hero-links">
+          <a href="mailto:jiaen.lin@u.duke.nus.edu" class="btn btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+            Contact Me
+          </a>
+          <a href="https://github.com/jiaenlin" target="_blank" rel="noopener noreferrer" class="btn btn-ghost">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
+            GitHub
+          </a>
+          <a href="https://www.linkedin.com/in/jiaenlin" target="_blank" rel="noopener noreferrer" class="btn btn-ghost">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+            LinkedIn
+          </a>
+          <a href="https://scholar.google.com" target="_blank" rel="noopener noreferrer" class="btn btn-ghost">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 24a7 7 0 1 1 0-14 7 7 0 0 1 0 14zm0-24L0 9.5l4.838 3.94A8 8 0 0 1 12 10a8 8 0 0 1 7.162 3.44L24 9.5z"/></svg>
+            Scholar
+          </a>
+        </div>
+      </div>
+      <div class="avatar-wrap">
+        <div class="avatar-placeholder" aria-label="Profile photo of Jiaen Lin">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- RESEARCH INTERESTS -->
+<section id="research">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label">Focus Areas</div>
+      <h2 class="section-title">Research Interests</h2>
+    </div>
+    <div class="interests-grid">
+      <div class="interest-card">
+        <div class="interest-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/></svg></div>
+        <div class="interest-title">Multi-Omics Integration</div>
+        <div class="interest-tags">
+          <span class="tag">Transcriptomics</span><span class="tag">Metabolomics</span><span class="tag">LC-MS</span><span class="tag">GC-MS</span>
+        </div>
+      </div>
+      <div class="interest-card">
+        <div class="interest-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg></div>
+        <div class="interest-title">Single-Cell RNA-seq</div>
+        <div class="interest-tags">
+          <span class="tag">Seurat</span><span class="tag">Scanpy</span><span class="tag">Cell Typing</span><span class="tag">scRNA-seq</span>
+        </div>
+      </div>
+      <div class="interest-card">
+        <div class="interest-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+        <div class="interest-title">Machine Learning for Biomedicine</div>
+        <div class="interest-tags">
+          <span class="tag">Random Forest</span><span class="tag">VAE</span><span class="tag">Neural Networks</span><span class="tag">Disease Prediction</span>
+        </div>
+      </div>
+      <div class="interest-card">
+        <div class="interest-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg></div>
+        <div class="interest-title">Disease Mechanisms</div>
+        <div class="interest-tags">
+          <span class="tag">Metabolic Syndrome</span><span class="tag">Autism</span><span class="tag">HFpEF</span><span class="tag">High-Salt Diet</span>
+        </div>
+      </div>
+      <div class="interest-card">
+        <div class="interest-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div>
+        <div class="interest-title">CRISPR &amp; Functional Genomics</div>
+        <div class="interest-tags">
+          <span class="tag">gRNA Library Screening</span><span class="tag">Cell Ranger</span><span class="tag">nf-core</span>
+        </div>
+      </div>
+      <div class="interest-card">
+        <div class="interest-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+        <div class="interest-title">Biomarker Discovery</div>
+        <div class="interest-tags">
+          <span class="tag">DESeq2</span><span class="tag">Cross-Species</span><span class="tag">qPCR</span><span class="tag">Biostatistics</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- NEWS -->
+<section id="news">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label">Latest</div>
+      <h2 class="section-title">News &amp; Updates</h2>
+    </div>
+    <div class="news-list">
+      <div class="news-item">
+        <span class="news-date">Aug 2025</span>
+        <span class="news-text">🎓 <strong>Graduated</strong> from the Duke-NUS IBioMed programme — completing the Integrative Biomedical PhD journey.<span class="highlight-badge">Milestone</span></span>
+      </div>
+      <div class="news-item">
+        <span class="news-date">2025</span>
+        <span class="news-text">🤖 Developing <strong>RegStatusNet</strong>, an AI model for cell regulatory status prediction combining transcriptomics and metabolomics signals.</span>
+      </div>
+      <div class="news-item">
+        <span class="news-date">2025</span>
+        <span class="news-text">🧬 Leading a multi-omics integration framework combining bulk RNA-seq and untargeted metabolomics for metabolic disease research.</span>
+      </div>
+      <div class="news-item">
+        <span class="news-date">2025</span>
+        <span class="news-text">🔬 Building a <strong>cell type classification pipeline</strong> for neural stem cell identification in human brain scRNA-seq datasets.</span>
+      </div>
+      <div class="news-item">
+        <span class="news-date">2024</span>
+        <span class="news-text">🌿 Investigating high-salt diet effects on metabolism and immunity through cross-species transcriptomic comparison.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PUBLICATIONS -->
+<section id="publications">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label">Research Output</div>
+      <h2 class="section-title">Selected Publications</h2>
+    </div>
+    <div class="pub-year-group">
+      <div class="pub-year">2025</div>
+      <div class="pub-list">
+        <div class="pub-item">
+          <div class="pub-venue">Manuscript in preparation</div>
+          <div class="pub-title">RegStatusNet: An AI Framework for Predicting Cell Regulatory Status via Multi-Omics Integration</div>
+          <div class="pub-authors"><span class="me">Jiaen Lin</span>, [collaborators TBA]</div>
+          <div class="pub-links">
+            <span class="pub-link">Preprint Coming Soon</span>
+          </div>
+        </div>
+        <div class="pub-item">
+          <div class="pub-venue">Manuscript in preparation</div>
+          <div class="pub-title">Cell Type Classification Pipeline for Neural Stem Cell Identification in Human Brain Single-Cell RNA-seq</div>
+          <div class="pub-authors"><span class="me">Jiaen Lin</span>, et al.</div>
+          <div class="pub-links">
+            <span class="pub-link">Coming Soon</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="pub-year-group">
+      <div class="pub-year">2023–2024</div>
+      <div class="pub-list">
+        <div class="pub-item">
+          <div class="pub-venue">Add your publications here</div>
+          <div class="pub-title">Your Published Paper Title Goes Here</div>
+          <div class="pub-authors"><span class="me">Jiaen Lin</span>, Co-Author Name, Supervisor Name.</div>
+          <div class="pub-links">
+            <a href="#" class="pub-link">[PDF]</a>
+            <a href="#" class="pub-link">[Code]</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p style="margin-top:var(--space-6);font-size:var(--text-sm);color:var(--color-text-muted)">
+      Full publication list → <a href="https://scholar.google.com" target="_blank">Google Scholar</a>
+    </p>
+  </div>
+</section>
+
+<!-- EXPERIENCE & EDUCATION -->
+<section id="experience">
+  <div class="container">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-12)">
+      <div>
+        <div class="section-header">
+          <div class="section-label">Career</div>
+          <h2 class="section-title">Experience</h2>
+        </div>
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div>
+              <div class="timeline-period">2025 – Present</div>
+              <div class="timeline-role">Research Fellow</div>
+              <div class="timeline-org">Duke-NUS Medical School · Singapore</div>
+              <div class="timeline-desc">Multi-omics integration, CRISPR gRNA library screening, machine learning models for disease prediction. PI: Prof. Wang Ho.</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div>
+              <div class="timeline-period">2020 – 2025</div>
+              <div class="timeline-role">PhD Researcher</div>
+              <div class="timeline-org">Duke-NUS IBioMed Programme · Singapore</div>
+              <div class="timeline-desc">Developed single-cell and bulk RNA-seq pipelines, untargeted metabolomics workflows, and ML-based cell type classifiers.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="section-header">
+          <div class="section-label">Academic</div>
+          <h2 class="section-title">Education</h2>
+        </div>
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div>
+              <div class="timeline-period">2020 – Aug 2025</div>
+              <div class="timeline-role">PhD, Integrative Biomedical Sciences</div>
+              <div class="timeline-org">Duke-NUS Medical School</div>
+              <div class="timeline-desc">Graduated August 2025. Research on multi-omics, metabolic syndrome, and AI-driven biomarker discovery.</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div>
+              <div class="timeline-period">Before 2020</div>
+              <div class="timeline-role">Undergraduate Degree</div>
+              <div class="timeline-org">Add your undergraduate institution</div>
+              <div class="timeline-desc">Bachelor's degree in [your field]. Update this section with your details.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SKILLS -->
+<section id="skills">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label">Technical</div>
+      <h2 class="section-title">Skills &amp; Tools</h2>
+    </div>
+    <div class="skills-grid">
+      <div class="skill-group">
+        <div class="skill-group-title">Languages</div>
+        <div class="skill-list">
+          <span class="tag">Python</span><span class="tag">R</span><span class="tag">Bash</span>
+        </div>
+      </div>
+      <div class="skill-group">
+        <div class="skill-group-title">Transcriptomics</div>
+        <div class="skill-list">
+          <span class="tag">Seurat</span><span class="tag">DESeq2</span><span class="tag">Scanpy</span><span class="tag">nf-core</span><span class="tag">Cell Ranger</span>
+        </div>
+      </div>
+      <div class="skill-group">
+        <div class="skill-group-title">Metabolomics</div>
+        <div class="skill-list">
+          <span class="tag">LC-MS</span><span class="tag">GC-MS</span><span class="tag">Untargeted Metabolomics</span><span class="tag">Biomart</span>
+        </div>
+      </div>
+      <div class="skill-group">
+        <div class="skill-group-title">Machine Learning</div>
+        <div class="skill-list">
+          <span class="tag">Pandas</span><span class="tag">Decoupler</span><span class="tag">Random Forest</span><span class="tag">VAE</span>
+        </div>
+      </div>
+      <div class="skill-group">
+        <div class="skill-group-title">Infrastructure</div>
+        <div class="skill-list">
+          <span class="tag">Git</span><span class="tag">Linux/HPC</span><span class="tag">Snakemake</span>
+        </div>
+      </div>
+      <div class="skill-group">
+        <div class="skill-group-title">Cell-Cell Communication</div>
+        <div class="skill-list">
+          <span class="tag">CellChat</span><span class="tag">NicheNet</span><span class="tag">SCENIC</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="container">
+    <div class="contact-grid">
+      <div>
+        <div class="section-label">Get In Touch</div>
+        <h2 class="section-title" style="margin-bottom:var(--space-6)">Contact</h2>
+        <p class="contact-desc">
+          I'm open to collaborations in multi-omics data integration, AI/ML for biomedical research, and translational omics studies. Feel free to reach out for research discussions or potential positions.
+        </p>
+        <p style="font-size:var(--text-sm);color:var(--color-text-muted)">📍 Singapore</p>
+      </div>
+      <div class="contact-links">
+        <a href="mailto:jiaen.lin@u.duke.nus.edu" class="contact-link">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+          jiaen.lin@u.duke.nus.edu
+        </a>
+        <a href="https://github.com/jiaenlin" target="_blank" rel="noopener noreferrer" class="contact-link">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          github.com/jiaenlin
+        </a>
+        <a href="https://www.linkedin.com/in/jiaenlin" target="_blank" rel="noopener noreferrer" class="contact-link">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+          LinkedIn Profile
+        </a>
+        <a href="https://scholar.google.com" target="_blank" rel="noopener noreferrer" class="contact-link">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 24a7 7 0 1 1 0-14 7 7 0 0 1 0 14zm0-24L0 9.5l4.838 3.94A8 8 0 0 1 12 10a8 8 0 0 1 7.162 3.44L24 9.5z"/></svg>
+          Google Scholar
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <p>© 2025 Jiaen Lin · Built with GitHub Pages · Singapore</p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  const t=document.querySelector('[data-theme-toggle]'),r=document.documentElement;
+  let d=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';
+  r.setAttribute('data-theme',d);
+  const moon='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+  const sun='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';
+  t&&t.addEventListener('click',()=>{
+    d=d==='dark'?'light':'dark';
+    r.setAttribute('data-theme',d);
+    t.innerHTML=d==='dark'?sun:moon;
+    t.setAttribute('aria-label','Switch to '+(d==='dark'?'light':'dark')+' mode');
+  });
+  if(d==='dark'&&t)t.innerHTML=sun;
+})();
+</script>
+</body>
+</html>
