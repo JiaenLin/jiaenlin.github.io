@@ -666,21 +666,15 @@ function setLang(lang) {
 <script>
 (function(){
   var s=document.createElement('style');
-  s.textContent='#jl-bubble{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#01696f,#0c4e54);color:#fff;border:none;cursor:pointer;border-radius:99px;padding:12px 20px 12px 14px;box-shadow:0 4px 24px rgba(1,105,111,.45);transition:transform .2s,box-shadow .2s;font-family:"Instrument Serif",Georgia,serif;font-style:italic;font-size:1.15rem;white-space:nowrap}#jl-bubble:hover{transform:scale(1.05);box-shadow:0 8px 32px rgba(1,105,111,.55)}#jl-bubble .icon{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;flex-shrink:0}#jl-panel{position:fixed;bottom:90px;right:24px;z-index:9998;width:min(420px,calc(100vw - 32px));height:min(620px,calc(100dvh - 110px));border-radius:18px;overflow:hidden;box-shadow:0 12px 48px rgba(0,0,0,.22);transform-origin:bottom right;transform:scale(.9) translateY(12px);opacity:0;pointer-events:none;transition:opacity .22s cubic-bezier(.16,1,.3,1),transform .22s cubic-bezier(.16,1,.3,1);border:1px solid rgba(0,0,0,.1)}#jl-panel.open{transform:scale(1) translateY(0);opacity:1;pointer-events:all}#jl-panel iframe{width:100%;height:100%;border:none}@media(max-width:600px){#jl-bubble span.label{display:none}#jl-bubble{padding:14px}#jl-bubble .icon{width:26px;height:26px}#jl-panel{right:10px;bottom:76px;width:calc(100vw - 20px);height:calc(100dvh - 96px)}}';
+  s.textContent='#jl-bubble{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#01696f,#0c4e54);color:#fff;border:none;cursor:pointer;border-radius:99px;padding:12px 20px 12px 14px;box-shadow:0 4px 24px rgba(1,105,111,.45);transition:transform .2s,box-shadow .2s;font-family:inherit;font-style:normal;white-space:nowrap}#jl-bubble:hover{transform:scale(1.05);box-shadow:0 8px 32px rgba(1,105,111,.55)}#jl-bubble .icon{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;flex-shrink:0}#jl-bubble .label{display:flex;flex-direction:column;align-items:flex-start;gap:1px}#jl-bubble .label .en{font-size:0.9rem;font-weight:500;letter-spacing:0.01em;line-height:1.2}#jl-bubble .label .zh{font-size:0.75rem;font-weight:400;opacity:0.85;line-height:1.2;letter-spacing:0.02em}#jl-panel{position:fixed;bottom:90px;right:24px;z-index:9998;width:min(420px,calc(100vw - 32px));height:min(620px,calc(100dvh - 110px));border-radius:18px;overflow:hidden;box-shadow:0 12px 48px rgba(0,0,0,.22);transform-origin:bottom right;transform:scale(.9) translateY(12px);opacity:0;pointer-events:none;transition:opacity .22s cubic-bezier(.16,1,.3,1),transform .22s cubic-bezier(.16,1,.3,1);border:1px solid rgba(0,0,0,.1)}#jl-panel.open{transform:scale(1) translateY(0);opacity:1;pointer-events:all}#jl-panel iframe{width:100%;height:100%;border:none}@media(max-width:600px){#jl-bubble .label{display:none}#jl-bubble{padding:14px}#jl-bubble .icon{width:26px;height:26px}}';
   document.head.appendChild(s);
-
-  // Load Instrument Serif for the button label
-  var lnk=document.createElement('link');
-  lnk.rel='stylesheet';
-  lnk.href='https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@1&display=swap';
-  document.head.appendChild(lnk);
 
   var open=false,loaded=false;
 
   var btn=document.createElement('button');
   btn.id='jl-bubble';
   btn.title='Chat with Jiaen\'s AI twin';
-  btn.innerHTML='<span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><span class="label">Chat with my Digital Twin</span>';
+  btn.innerHTML='<span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><span class="label"><span class="en">Chat with my AI Digital Twin</span><span class="zh">和佳恩的AI分身聊天</span></span>';
 
   var panel=document.createElement('div');
   panel.id='jl-panel';
