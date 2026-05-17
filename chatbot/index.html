@@ -133,7 +133,14 @@ const input = document.getElementById("input");
 const sendBtn = document.getElementById("sendBtn");
 const typing = document.getElementById("typing");
 const chips = document.getElementById("chips");
-
+function getVisitorId() {
+  let id = localStorage.getItem("jl_visitor_id");
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem("jl_visitor_id", id);
+  }
+  return id;
+}
 // Theme toggle
 let dark = matchMedia("(prefers-color-scheme:dark)").matches;
 setTheme(dark);
@@ -192,7 +199,10 @@ async function send(){
     const res = await fetch(WORKER, {
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({messages:history})
+      body: JSON.stringify({
+      messages: history,
+      visitorId: getVisitorId()
+    })
     });
     if(!res.ok) throw new Error("HTTP "+res.status);
 
