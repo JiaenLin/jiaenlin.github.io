@@ -333,6 +333,15 @@ function speak(text) {
                name.includes('male');
       }
     });
+  // Chrome fallback: grab second zh-CN voice (usually male)
+  if (!maleVoice) {
+    const zhVoices = voices.filter(v => v.lang.startsWith('zh-CN'));
+    console.log('ZH voices found:', zhVoices.map(v => v.name)); // debug
+    if (zhVoices.length > 1) utter.voice = zhVoices[1]; // index 1 = male on Chrome
+    else if (zhVoices.length === 1) utter.voice = zhVoices[0];
+  } else {
+    utter.voice = maleVoice;
+  }
     if (maleVoice) utter.voice = maleVoice;
     window.speechSynthesis.speak(utter);
   }
