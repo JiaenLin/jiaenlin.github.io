@@ -297,8 +297,25 @@ function speak(text) {
     .trim();
   const utter = new SpeechSynthesisUtterance(plain.slice(0, 500));
   utter.lang = document.documentElement.lang.startsWith('zh') ? 'zh-CN' : 'en-US';
-  utter.rate = 1.2;
+  utter.rate = 1.4;
   utter.pitch = 1;
+  const voices = window.speechSynthesis.getVoices();
+  const maleVoice = voices.find(v =>
+    v.lang.startsWith(utter.lang.slice(0,2)) &&
+    (v.name.toLowerCase().includes('male') ||
+     v.name.toLowerCase().includes('david') ||
+     v.name.toLowerCase().includes('mark') ||
+     v.name.toLowerCase().includes('daniel') ||
+     v.name.toLowerCase().includes('alex') ||
+     // Chinese male names
+     v.name.includes('Yunxi') ||
+     v.name.includes('Yunyang') ||
+     v.name.includes('Yunjian') ||
+     v.name.includes('kangkang') ||
+     v.name.includes('男') ||
+     v.name.toLowerCase().includes('male'))
+  );
+  if (maleVoice) utter.voice = maleVoice;
   window.speechSynthesis.speak(utter);
 }
 function md(t){
