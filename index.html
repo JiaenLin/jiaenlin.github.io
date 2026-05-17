@@ -622,7 +622,36 @@
     </div>
   </div>
 </section>
+<!-- QR Code section -->
+<div id="qr-section" style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:24px 0">
+  <div id="qrcode" style="width:160px;height:160px;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.12)"></div>
+  <p style="font-size:0.8rem;color:var(--muted);text-align:center">Scan to visit my site<br><span style="font-size:0.72rem;opacity:0.7">jiaenlin.github.io</span></p>
+  <button onclick="downloadQR()" style="font-size:0.78rem;padding:6px 14px;border-radius:99px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer">⬇ Download QR</button>
+</div>
 
+<!-- QR code library (free, no API key needed) -->
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script>
+  // Generate QR code pointing to your site
+  const qr = new QRCode(document.getElementById("qrcode"), {
+    text: "https://jiaenlin.github.io",
+    width: 160,
+    height: 160,
+    colorDark: "#01696f",   // your teal brand colour
+    colorLight: "#ffffff",
+    correctLevel: QRCode.CorrectLevel.H  // highest error correction
+  });
+
+  // Download QR as PNG
+  function downloadQR() {
+    const canvas = document.querySelector("#qrcode canvas");
+    if (!canvas) { alert("QR not ready yet, try again in a second"); return; }
+    const link = document.createElement("a");
+    link.download = "jiaenlin-qr.png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  }
+</script>
 <footer>
   <div class="container">
     <p>© 2026 Jiaen Lin · Built with GitHub Pages · <span data-en="Singapore" data-zh="新加坡">Singapore</span></p>
