@@ -297,7 +297,7 @@ function speak(text) {
     .trim();
   const utter = new SpeechSynthesisUtterance(plain.slice(0, 500));
   utter.lang = document.documentElement.lang.startsWith('zh') ? 'zh-CN' : 'en-US';
-  utter.rate = 1;
+  utter.rate = 1.2;
   utter.pitch = 1;
   window.speechSynthesis.speak(utter);
 }
