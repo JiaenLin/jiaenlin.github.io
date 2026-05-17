@@ -88,6 +88,12 @@ textarea::placeholder{color:var(--faint)}
     <button class="hbtn" id="themeBtn" title="Toggle dark mode">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
     </button>
+    <button class="hbtn" id="muteBtn" title="Toggle voice output">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+        <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+      </svg>
+    </button>
     <button class="hbtn" id="clearBtn" title="Clear chat">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.36"/></svg>
     </button>
@@ -149,6 +155,20 @@ function getVisitorId() {
 let dark = matchMedia("(prefers-color-scheme:dark)").matches;
 setTheme(dark);
 document.getElementById("themeBtn").onclick = () => { dark=!dark; setTheme(dark); };
+let voiceEnabled = true;
+document.getElementById("muteBtn").onclick = () => {
+  voiceEnabled = !voiceEnabled;
+  window.speechSynthesis.cancel();
+  document.getElementById("muteBtn").innerHTML = voiceEnabled
+    ? `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+        <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+       </svg>`
+    : `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+        <line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>
+       </svg>`;
+};
 function setTheme(d){
   document.documentElement.setAttribute("data-theme",d?"dark":"light");
   document.getElementById("themeBtn").innerHTML = d
@@ -159,6 +179,7 @@ function setTheme(d){
 // Clear chat
 document.getElementById("clearBtn").onclick = () => {
   history = [];
+  window.speechSynthesis.cancel(); 
   [...msgs.querySelectorAll(".row")].slice(1).forEach(r=>r.remove());
   chips.style.display="flex";
 };
@@ -233,6 +254,7 @@ async function send(){
       }
     }
     history.push({role:"assistant",content:full});
+    speak(full); 
   } catch(err){
     typing.classList.remove("on");
     bubble.innerHTML='<span style="color:var(--muted)">Connection error — please try again.</span>';
@@ -262,7 +284,23 @@ function makeRow(role){
 }
 
 function scroll(){ msgs.scrollTo({top:msgs.scrollHeight,behavior:"smooth"}); }
-
+function speak(text) {
+  if (!window.speechSynthesis || !voiceEnabled) return;
+  window.speechSynthesis.cancel();
+  const plain = text
+    .replace(/```[\s\S]*?```/g, 'code block')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/\*(.+?)\*/g, '$1')
+    .replace(/#+\s/g, '')
+    .replace(/<[^>]+>/g, '')
+    .trim();
+  const utter = new SpeechSynthesisUtterance(plain.slice(0, 500));
+  utter.lang = document.documentElement.lang.startsWith('zh') ? 'zh-CN' : 'en-US';
+  utter.rate = 1;
+  utter.pitch = 1;
+  window.speechSynthesis.speak(utter);
+}
 function md(t){
   return t
     .replace(/```[\w]*\n?([\s\S]*?)```/g,(_,c)=>`<pre><code>${esc(c.trim())}</code></pre>`)
