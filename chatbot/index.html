@@ -297,26 +297,48 @@ function speak(text) {
     .trim();
   const utter = new SpeechSynthesisUtterance(plain.slice(0, 500));
   utter.lang = document.documentElement.lang.startsWith('zh') ? 'zh-CN' : 'en-US';
-  utter.rate = 1.4;
+  utter.rate = 1.1;
   utter.pitch = 1;
-  const voices = window.speechSynthesis.getVoices();
-  const maleVoice = voices.find(v =>
-    v.lang.startsWith(utter.lang.slice(0,2)) &&
-    (v.name.toLowerCase().includes('male') ||
-     v.name.toLowerCase().includes('david') ||
-     v.name.toLowerCase().includes('mark') ||
-     v.name.toLowerCase().includes('daniel') ||
-     v.name.toLowerCase().includes('alex') ||
-     // Chinese male names
-     v.name.includes('Yunxi') ||
-     v.name.includes('Yunyang') ||
-     v.name.includes('Yunjian') ||
-     v.name.includes('kangkang') ||
-     v.name.includes('男') ||
-     v.name.toLowerCase().includes('male'))
-  );
-  if (maleVoice) utter.voice = maleVoice;
-  window.speechSynthesis.speak(utter);
+
+  function assignVoiceAndSpeak() {
+    const voices = window.speechSynthesis.getVoices();
+    // debug: uncomment to see all available voices in console
+    // console.log(voices.map(v => v.name + ' | ' + v.lang));
+
+    const isChinese = utter.lang.startsWith('zh');
+    const maleVoice = voices.find(v => {
+      const name = v.name.toLowerCase();
+      const langMatch = v.lang.startsWith(isChinese ? 'zh' : 'en');
+      if (!langMatch) return false;
+      if (isChinese) {
+        return name.includes('yunxi') ||
+               name.includes('yunyang') ||
+               name.includes('yunjian') ||
+               name.includes('kangkang') ||
+               name.includes('male') ||
+               v.name.includes('男');
+      } else {
+        return name.includes('david') ||
+               name.includes('mark') ||
+               name.includes('daniel') ||
+               name.includes('alex') ||
+               name.includes('male');
+      }
+    });
+    if (maleVoice) utter.voice = maleVoice;
+    window.speechSynthesis.speak(utter);
+  }
+
+  // voices already loaded
+  if (window.speechSynthesis.getVoices().length > 0) {
+    assignVoiceAndSpeak();
+  } else {
+    // wait for voices to load, then speak
+    window.speechSynthesis.onvoiceschanged = () => {
+      window.speechSynthesis.onvoiceschanged = null; // run once only
+      assignVoiceAndSpeak();
+    };
+  }
 }
 function md(t){
   return t
