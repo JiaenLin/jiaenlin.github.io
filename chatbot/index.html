@@ -125,6 +125,10 @@ textarea::placeholder{color:var(--faint)}
 </form>
 
 <script>
+// Read lang from parent via URL param
+const urlParams = new URLSearchParams(window.location.search);
+const siteLang = urlParams.get('lang') || 'en';
+document.documentElement.lang = siteLang;
 const WORKER = "https://jiaen-digital-twin.jiaenlin999.workers.dev/chat";
 let history = [], streaming = false;
 
