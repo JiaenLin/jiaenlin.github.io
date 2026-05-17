@@ -155,7 +155,7 @@ function getVisitorId() {
 let dark = matchMedia("(prefers-color-scheme:dark)").matches;
 setTheme(dark);
 document.getElementById("themeBtn").onclick = () => { dark=!dark; setTheme(dark); };
-let voiceEnabled = true;
+let voiceEnabled = false;
 document.getElementById("muteBtn").onclick = () => {
   voiceEnabled = !voiceEnabled;
   window.speechSynthesis.cancel();
