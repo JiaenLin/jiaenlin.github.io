@@ -311,13 +311,21 @@ function speak(text) {
       const langMatch = v.lang.startsWith(isChinese ? 'zh' : 'en');
       if (!langMatch) return false;
       if (isChinese) {
-        return name.includes('yunxi') ||
-               name.includes('yunyang') ||
-               name.includes('yunjian') ||
-               name.includes('kangkang') ||
-               name.includes('male') ||
-               v.name.includes('男');
-      } else {
+  return name.includes('yunxi') ||
+         name.includes('yunyang') ||
+         name.includes('yunjian') ||
+         name.includes('kangkang') ||
+         name.includes('zhiwei') ||
+         name.includes('google 普通话') ||
+         name.includes('male') ||
+         name.includes('zh-cn male') ||
+         v.name.includes('男') ||
+         // Chrome on Windows
+         name.includes('microsoft yunxi') ||
+         name.includes('microsoft yunyang') ||
+         // Chrome on Mac
+         name.includes('tingting') === false && v.lang === 'zh-CN';
+    } else {
         return name.includes('david') ||
                name.includes('mark') ||
                name.includes('daniel') ||
