@@ -68,6 +68,10 @@ textarea::placeholder{color:var(--faint)}
 .sendbtn:disabled{opacity:.4;cursor:not-allowed;transform:none}
 
 @media(max-width:480px){.bubble{max-width:90%}.chips{flex-wrap:nowrap;overflow-x:auto}.chips::-webkit-scrollbar{display:none}}
+.micbtn{width:40px;height:40px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 150ms}
+.micbtn:hover{border-color:var(--primary);color:var(--primary)}
+.micbtn.listening{background:var(--primary);color:#fff;border-color:var(--primary);animation:mic-pulse 1s ease-in-out infinite}
+@keyframes mic-pulse{0%,100%{box-shadow:0 0 0 0 color-mix(in oklch,var(--primary) 40%,transparent)}50%{box-shadow:0 0 0 8px color-mix(in oklch,var(--primary) 0%,transparent)}}
 </style>
 </head>
 <body>
@@ -112,6 +116,9 @@ textarea::placeholder{color:var(--faint)}
 
 <form class="inputbar" id="form" onsubmit="return false">
   <textarea id="input" placeholder="Ask Jiaen anything…" rows="1" aria-label="Message"></textarea>
+  <button class="micbtn" id="micBtn" type="button" aria-label="Voice input" title="Speak your question">
+    <svg id="mic-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
+  </button>
   <button class="sendbtn" id="sendBtn" disabled aria-label="Send">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
   </button>
@@ -256,6 +263,60 @@ function md(t){
     .replace(/\n/g,"<br>");
 }
 function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+// ── Voice input ──────────────────────────────────────────────────
+const micBtn = document.getElementById("micBtn");
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+if (!SpeechRecognition) {
+  micBtn.style.display = "none";
+} else {
+  const recognition = new SpeechRecognition();
+  recognition.continuous = false;
+  recognition.interimResults = true;
+  recognition.lang = "en-US";
+  let isListening = false;
+
+  micBtn.addEventListener("click", () => {
+    if (isListening) {
+      recognition.stop();
+    } else {
+      const lang = document.documentElement.lang || "en";
+      recognition.lang = lang.startsWith("zh") ? "zh-CN" : "en-US";
+      recognition.start();
+    }
+  });
+
+  recognition.onstart = () => {
+    isListening = true;
+    micBtn.classList.add("listening");
+    micBtn.title = "Listening… click to stop";
+    input.placeholder = "Listening…";
+  };
+
+  recognition.onresult = (e) => {
+    const transcript = Array.from(e.results)
+      .map(r => r[0].transcript).join("");
+    input.value = transcript;
+    input.dispatchEvent(new Event("input"));
+  };
+
+  recognition.onend = () => {
+    isListening = false;
+    micBtn.classList.remove("listening");
+    micBtn.title = "Speak your question";
+    input.placeholder = "Ask Jiaen anything…";
+    if (input.value.trim()) send();
+  };
+
+  recognition.onerror = (e) => {
+    isListening = false;
+    micBtn.classList.remove("listening");
+    if (e.error !== "no-speech") {
+      input.placeholder = "Mic error — try again";
+      setTimeout(() => input.placeholder = "Ask Jiaen anything…", 2000);
+    }
+  };
+}
 </script>
 </body>
 </html>
