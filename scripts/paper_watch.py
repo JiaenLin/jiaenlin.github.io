@@ -1,78 +1,121 @@
 #!/usr/bin/env python3
 """
-Daily paper watcher — Cell, Nature, Science
-Uses Groq (free) for one-line summaries
+Daily paper watcher — Nature, Science, Cell + journals
+Uses NCBI API key (10 req/sec) + Groq for summaries
 Stores result to GitHub Gist
 """
-import requests, json, os, re
-from datetime import date
+import requests, json, os, re, time
+from datetime import date, timedelta
 from xml.etree import ElementTree as ET
 
-GIST_ID   = os.environ['GIST_ID']
-GH_TOKEN  = os.environ['GH_TOKEN']
-GROQ_KEY  = os.environ['GROQ_KEY']
-TODAY     = str(date.today())
+# ── Credentials ────────────────────────────────────────────────
+GIST_ID  = os.environ.get('GIST_ID',  '')
+GH_TOKEN = os.environ.get('GH_TOKEN', '')
+GROQ_KEY = os.environ.get('GROQ_KEY', '')
+NCBI_KEY = os.environ.get('NCBI_KEY', '')   # ← new
+
+TODAY = str(date.today())
+FROM  = str(date.today() - timedelta(days=3))
 
 JOURNALS = {
-    'Nature':               '0028-0836',
-    'Science':              '0036-8075',
-    'Cell':                 '0092-8674',
-    'Nature Methods':       '1548-7091',
+    'Nature':                '0028-0836',
+    'Science':               '0036-8075',
+    'Cell':                  '0092-8674',
+    'Nature Methods':        '1548-7091',
+    'Nature Communications': '2041-1723',
+    'Cell Reports':          '2211-1247',
+    'Genome Biology':        '1474-760X',
+    'Nature Biotechnology':  '1087-0156',
 }
 
-# ── 1. Fetch from PubMed (free, no key needed) ─────────────────
-def fetch_papers(issn, journal_name, max_results=4):
-    # With this (searches last 3 days):
-    from datetime import date, timedelta
-    THREE_DAYS_AGO = str(date.today() - timedelta(days=30))
+BIO_TERMS = (
+    'biology OR genomics OR transcriptomics OR single-cell OR '
+    'RNA-seq OR proteomics OR metabolomics OR CRISPR OR '
+    'neuroscience OR stem cell OR cancer OR epigenetics OR '
+    'bioinformatics OR multi-omics'
+)
 
-    query = (
-        f'{issn}[ISSN] AND '
-        f'("{THREE_DAYS_AGO}"[PDAT]:"{TODAY}"[PDAT]) AND '
-        f'(biology OR genomics OR transcriptomics OR single-cell OR '
-        f'RNA-seq OR proteomics OR metabolomics OR CRISPR OR '
-        f'neuroscience OR stem cell OR cancer OR epigenetics)'
-    )
-    search = requests.get(
-        'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi',
-        params={
-            'db':'pubmed', 'term':query,
-            'retmax':max_results, 'retmode':'json', 'sort':'date'
-        }, timeout=15
-    )
-    ids = search.json().get('esearchresult',{}).get('idlist',[])
-    if not ids: return []
+# ── Helper: add NCBI key to any params dict ────────────────────
+def ncbi_params(extra: dict) -> dict:
+    p = {**extra}
+    if NCBI_KEY:
+        p['api_key'] = NCBI_KEY
+    return p
 
-    xml  = requests.get(
-        'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi',
-        params={'db':'pubmed','id':','.join(ids),'retmode':'xml'},
-        timeout=15
-    ).text
-    root    = ET.fromstring(xml)
-    papers  = []
+# ── 1. Fetch papers from PubMed ────────────────────────────────
+def fetch_papers(issn, journal_name, max_results=5):
+    query = f'{issn}[ISSN] AND ("{FROM}"[PDAT]:"{TODAY}"[PDAT]) AND ({BIO_TERMS})'
 
+    # Search
+    try:
+        r = requests.get(
+            'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi',
+            params=ncbi_params({
+                'db':'pubmed', 'term':query,
+                'retmax':max_results, 'retmode':'json', 'sort':'date'
+            }),
+            timeout=15
+        )
+        ids = r.json().get('esearchresult', {}).get('idlist', [])
+        print(f'  IDs: {ids if ids else "none"}')
+    except Exception as e:
+        print(f'  Search error: {e}')
+        return []
+
+    if not ids:
+        return []
+
+    # Polite delay: 0.11s with key (10/sec), 0.4s without (3/sec)
+    time.sleep(0.11 if NCBI_KEY else 0.4)
+
+    # Fetch abstracts
+    try:
+        fetch_r = requests.get(
+            'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi',
+            params=ncbi_params({
+                'db':'pubmed', 'id':','.join(ids), 'retmode':'xml'
+            }),
+            timeout=15
+        )
+        xml_text = fetch_r.text
+
+        if not xml_text.strip().startswith('<'):
+            print(f'  ⚠️ Invalid response: {xml_text[:150]}')
+            return []
+
+        root = ET.fromstring(xml_text)
+
+    except ET.ParseError as e:
+        print(f'  ⚠️ XML parse error: {e}')
+        return []
+    except Exception as e:
+        print(f'  ⚠️ Fetch error: {e}')
+        return []
+
+    # Parse articles
+    papers = []
     for article in root.findall('.//PubmedArticle'):
         try:
-            title = re.sub(r'<[^>]+>','',
-                article.findtext('.//ArticleTitle','').strip())
+            title = re.sub(r'<[^>]+>', '',
+                article.findtext('.//ArticleTitle', '').strip())
 
             abstract = ' '.join(
-                (p.text or '')
-                for p in article.findall('.//AbstractText')
+                (p.text or '') for p in article.findall('.//AbstractText')
             ).strip()[:1000]
+
             if not title or not abstract:
                 continue
 
             authors = article.findall('.//Author')
             names   = []
             for a in authors[:3]:
-                ln = a.findtext('LastName','')
-                fn = a.findtext('ForeName','')
+                ln = a.findtext('LastName', '')
+                fn = a.findtext('ForeName', '')
                 if ln: names.append(f'{ln} {fn[:1]}.' if fn else ln)
             author_str = ', '.join(names)
             if len(authors) > 3: author_str += ' et al.'
 
-            pmid     = article.findtext('.//PMID','')
+            pmid     = article.findtext('.//PMID', '')
             doi_node = article.find('.//ArticleId[@IdType="doi"]')
             doi      = doi_node.text if doi_node is not None else ''
             url      = (f'https://doi.org/{doi}' if doi
@@ -87,49 +130,49 @@ def fetch_papers(issn, journal_name, max_results=4):
                 'journal':  journal_name,
             })
         except Exception as e:
-            print(f'  Parse error: {e}')
+            print(f'  Article parse error: {e}')
             continue
+
     return papers
 
 # ── 2. Summarise with Groq (free) ──────────────────────────────
-def summarise_groq(abstract):
-    if not abstract.strip():
-        return 'No abstract available.'
+def summarise(abstract):
+    if not GROQ_KEY:
+        # Fallback: first 22 words of abstract
+        return ' '.join(abstract.split()[:22]) + '…'
     try:
-        resp = requests.post(
+        r = requests.post(
             'https://api.groq.com/openai/v1/chat/completions',
             headers={
                 'Authorization': f'Bearer {GROQ_KEY}',
                 'Content-Type':  'application/json',
             },
             json={
-                'model':      'llama-3.1-8b-instant',  # free, very fast
-                'max_tokens': 60,
+                'model':       'llama-3.1-8b-instant',
+                'max_tokens':  60,
                 'temperature': 0.3,
                 'messages': [{
-                    'role': 'system',
+                    'role':    'system',
                     'content': (
                         'Summarise this biology paper abstract in exactly '
                         'one plain-English sentence under 25 words. '
                         'Start with the key finding. No preamble.'
                     )
-                },{
+                }, {
                     'role':    'user',
                     'content': abstract
                 }]
             },
             timeout=20
         )
-        return resp.json()['choices'][0]['message']['content'].strip()
+        return r.json()['choices'][0]['message']['content'].strip()
     except Exception as e:
         print(f'  Groq error: {e}')
-        # Fallback: first 25 words of abstract
-        words = abstract.split()[:25]
-        return ' '.join(words) + '…'
+        return ' '.join(abstract.split()[:22]) + '…'
 
 # ── 3. Save to GitHub Gist ─────────────────────────────────────
 def save_to_gist(data):
-    resp = requests.patch(
+    r = requests.patch(
         f'https://api.github.com/gists/{GIST_ID}',
         headers={
             'Authorization': f'Bearer {GH_TOKEN}',
@@ -145,23 +188,32 @@ def save_to_gist(data):
         },
         timeout=20
     )
-    return resp.status_code
+    return r.status_code
 
 # ── 4. Main ────────────────────────────────────────────────────
 def main():
-    print(f'Starting paper watch for {TODAY}...')
+    print(f'=== Paper Watch {TODAY} ===')
+    print(f'Date range : {FROM} → {TODAY}')
+    print(f'GIST_ID    : {"✅" if GIST_ID  else "❌ MISSING"}')
+    print(f'GH_TOKEN   : {"✅" if GH_TOKEN else "❌ MISSING"}')
+    print(f'GROQ_KEY   : {"✅" if GROQ_KEY else "❌ MISSING"}')
+    print(f'NCBI_KEY   : {"✅ (10 req/sec)" if NCBI_KEY else "⚠️ not set (3 req/sec)"}')
+    print()
+
     all_papers = []
 
     for journal, issn in JOURNALS.items():
         print(f'Fetching {journal}...')
-        papers = fetch_papers(issn, journal, max_results=4)
-        print(f'  Found {len(papers)} papers')
+        papers = fetch_papers(issn, journal)
+        print(f'  → {len(papers)} papers found')
 
         for p in papers:
             print(f'  Summarising: {p["title"][:55]}...')
-            p['summary'] = summarise_groq(p['abstract'])
-            del p['abstract']   # don't store full abstract in gist
+            p['summary'] = summarise(p['abstract'])
+            del p['abstract']      # don't bloat the gist
             all_papers.append(p)
+
+    print(f'\n✅ Total: {len(all_papers)} papers across all journals')
 
     result = {
         'date':   TODAY,
@@ -169,13 +221,26 @@ def main():
         'papers': all_papers,
     }
 
-    status = save_to_gist(result)
-    print(f'\nDone! {len(all_papers)} papers saved to Gist (HTTP {status})')
+    # Save
+    if not GIST_ID or not GH_TOKEN:
+        print('❌ Cannot save — missing GIST_ID or GH_TOKEN')
+        print(json.dumps(result, indent=2))
+        return
 
-    # Print preview
+    status = save_to_gist(result)
+    status_msg = {
+        200: '✅ Gist updated successfully',
+        404: '❌ Gist not found — wrong GIST_ID?',
+        401: '❌ Auth failed — check GH_TOKEN scope (needs "gist")',
+    }.get(status, f'❌ Unexpected HTTP {status}')
+    print(status_msg)
+
+    # Preview first 3
+    print('\n── Preview ──')
     for p in all_papers[:3]:
-        print(f'\n[{p["journal"]}] {p["title"][:60]}')
+        print(f'[{p["journal"]}] {p["title"][:60]}')
         print(f'  → {p["summary"]}')
+        print()
 
 if __name__ == '__main__':
     main()
