@@ -118,10 +118,76 @@
       background:var(--color-surface-offset);color:var(--color-text);
     }
     /* COUNTDOWN BANNER */
-    .countdown-banner { ... }
-    .countdown-inner { ... }
-    .countdown-label-text { ... }
-    .countdown-time { ... }
+    .countdown-banner {
+      padding: var(--space-6) 0;
+    }
+    .countdown-inner {
+      max-width: var(--content-default);
+      margin-inline: auto;
+      padding-inline: var(--space-6);
+    }
+    .countdown-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-6);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4) var(--space-6);
+      box-shadow: var(--shadow-md);
+      transition: box-shadow var(--transition-interactive);
+    }
+    .countdown-card:hover {
+      box-shadow: 0 8px 24px oklch(from var(--color-primary) l c h / 0.12);
+      border-color: var(--color-primary-highlight);
+    }
+    .countdown-left {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+    .countdown-icon {
+      font-size: 1.4rem;
+      line-height: 1;
+    }
+    .countdown-label-text {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--color-text);
+      letter-spacing: -0.01em;
+    }
+    .countdown-sublabel {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      margin-top: 2px;
+    }
+    .countdown-time {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      background: var(--color-primary-highlight);
+      border: 1px solid var(--color-primary);
+      border-radius: 9999px;
+      padding: var(--space-1) var(--space-4);
+      font-size: var(--text-xs);
+      font-weight: 700;
+      color: var(--color-primary);
+      letter-spacing: 0.03em;
+      white-space: nowrap;
+    }
+    .countdown-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--color-primary);
+      animation: cd-pulse 1.5s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+    @keyframes cd-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.4; transform: scale(0.7); }
+    }
     /* === HERO === */
     .hero{padding-block:clamp(var(--space-16),8vw,var(--space-24))}
     .hero-grid{display:grid;grid-template-columns:1fr auto;gap:var(--space-12);align-items:start}
@@ -379,9 +445,20 @@
     <!-- COUNTDOWN BANNER -->
     <div class="countdown-banner">
       <div class="countdown-inner">
-        <span class="countdown-label-text" id="cd-label">🎓 1 Year as PhD</span>
-        <span class="countdown-time" id="cd-time">Loading…</span>
-    </div>
+        <div class="countdown-card">
+          <div class="countdown-left">
+            <span class="countdown-icon" id="cd-icon">🎓</span>
+            <div>
+              <div class="countdown-label-text" id="cd-label">1 Year as PhD</div>
+              <div class="countdown-sublabel" id="cd-sublabel">Aug 1, 2026</div>
+            </div>
+          </div>
+          <div class="countdown-time">
+            <span class="countdown-dot"></span>
+            <span id="cd-time">Loading…</span>
+          </div>
+        </div>
+      </div>
 </div>
     <div class="news-list">
         <div class="news-item">
@@ -689,39 +766,52 @@
 /* ── Language toggle ── */
 let currentLang = 'en';
   /* ── COUNTDOWN ── */
-  const CD_EVENT_DATE = '2026-06-05T17:30:00';
-  const CD_LABEL_EN   = 'China trip!';
-  const CD_LABEL_ZH   = 'China trip!';
+  const CD_EVENT_DATE   = '2026-08-01T00:00:00';
+  const CD_LABEL_EN     = '1 Year as PhD';
+  const CD_LABEL_ZH     = '博士毕业一周年';
+  const CD_SUBLABEL_EN  = 'Aug 1, 2026';
+  const CD_SUBLABEL_ZH  = '2026年8月1日';
+  const CD_ICON         = '🎓';
 
   (function() {
-    const EVENT = new Date(CD_EVENT_DATE);
-    const time  = document.getElementById('cd-time');
-    const label = document.getElementById('cd-label');
+    const EVENT    = new Date(CD_EVENT_DATE);
+    const time     = document.getElementById('cd-time');
+    const label    = document.getElementById('cd-label');
+    const sublabel = document.getElementById('cd-sublabel');
+    const icon     = document.getElementById('cd-icon');
 
-    label.setAttribute('data-en', CD_LABEL_EN);
-    label.setAttribute('data-zh', CD_LABEL_ZH);
-    label.textContent = CD_LABEL_EN;
+    icon.textContent = CD_ICON;
+
+    function applyLang() {
+      const lang = document.documentElement.lang || 'en';
+      label.textContent    = lang.startsWith('zh') ? CD_LABEL_ZH    : CD_LABEL_EN;
+      sublabel.textContent = lang.startsWith('zh') ? CD_SUBLABEL_ZH : CD_SUBLABEL_EN;
+    }
 
     function update() {
       const now       = new Date();
       const remaining = EVENT - now;
       const lang      = document.documentElement.lang || 'en';
 
+      applyLang();
+
       if (remaining <= 0) {
         time.textContent = lang.startsWith('zh') ? '🎉 已完成！' : '🎉 Done!';
+        document.querySelector('.countdown-dot').style.background = '#22c55e';
         return;
       }
 
       const days  = Math.floor(remaining / 86400000);
       const hours = Math.floor((remaining % 86400000) / 3600000);
+      const mins  = Math.floor((remaining % 3600000) / 60000);
 
       time.textContent = lang.startsWith('zh')
-        ? `${days}天 ${hours}小时`
-        : `${days}d ${hours}h left`;
+        ? `${days}天 ${hours}小时 ${mins}分`
+        : `${days}d ${hours}h ${mins}m`;
     }
 
     update();
-    setInterval(update, 60000);
+    setInterval(update, 1000);   // updates every second for live feel
   })();
 function setLang(lang) {
   currentLang = lang;
