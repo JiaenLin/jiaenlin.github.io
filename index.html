@@ -117,7 +117,11 @@
     .lang-toggle button:not(.active):hover{
       background:var(--color-surface-offset);color:var(--color-text);
     }
-
+    /* COUNTDOWN BANNER */
+    .countdown-banner { ... }
+    .countdown-inner { ... }
+    .countdown-label-text { ... }
+    .countdown-time { ... }
     /* === HERO === */
     .hero{padding-block:clamp(var(--space-16),8vw,var(--space-24))}
     .hero-grid{display:grid;grid-template-columns:1fr auto;gap:var(--space-12);align-items:start}
@@ -250,6 +254,13 @@
     </div>
   </div>
 </nav>
+<!-- COUNTDOWN BANNER -->
+<div class="countdown-banner">
+  <div class="countdown-inner">
+    <span class="countdown-label-text" id="cd-label">🎓 1 Year as PhD</span>
+    <span class="countdown-time" id="cd-time">Loading…</span>
+  </div>
+</div>
 
 <!-- HERO -->
 <header class="hero">
@@ -677,7 +688,41 @@
 
 /* ── Language toggle ── */
 let currentLang = 'en';
+  /* ── COUNTDOWN ── */
+  const CD_EVENT_DATE = '2026-06-05T17:30:00';
+  const CD_LABEL_EN   = 'China trip!';
+  const CD_LABEL_ZH   = 'China trip!';
 
+  (function() {
+    const EVENT = new Date(CD_EVENT_DATE);
+    const time  = document.getElementById('cd-time');
+    const label = document.getElementById('cd-label');
+
+    label.setAttribute('data-en', CD_LABEL_EN);
+    label.setAttribute('data-zh', CD_LABEL_ZH);
+    label.textContent = CD_LABEL_EN;
+
+    function update() {
+      const now       = new Date();
+      const remaining = EVENT - now;
+      const lang      = document.documentElement.lang || 'en';
+
+      if (remaining <= 0) {
+        time.textContent = lang.startsWith('zh') ? '🎉 已完成！' : '🎉 Done!';
+        return;
+      }
+
+      const days  = Math.floor(remaining / 86400000);
+      const hours = Math.floor((remaining % 86400000) / 3600000);
+
+      time.textContent = lang.startsWith('zh')
+        ? `${days}天 ${hours}小时`
+        : `${days}d ${hours}h left`;
+    }
+
+    update();
+    setInterval(update, 60000);
+  })();
 function setLang(lang) {
   currentLang = lang;
 
