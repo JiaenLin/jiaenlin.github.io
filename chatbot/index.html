@@ -256,6 +256,7 @@ document.getElementById("form").addEventListener("submit", () => { if (!sendBtn.
 chipsEl.addEventListener("click", e => {
   const c = e.target.closest(".chip");
   if (!c || streaming) return;
+  if (c.id === 'paper-chip') return;
   input.value = c.dataset.p;
   input.dispatchEvent(new Event("input"));
   send();
