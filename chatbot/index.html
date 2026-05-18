@@ -136,6 +136,7 @@ const urlParams = new URLSearchParams(window.location.search);
 const siteLang = urlParams.get('lang') || 'en';
 document.documentElement.lang = siteLang;
 const WORKER = "https://jiaen-digital-twin.jiaenlin999.workers.dev/chat";
+window.speechSynthesis.getVoices();
 let history = [], streaming = false;
 
 const msgs = document.getElementById("msgs");
@@ -301,61 +302,49 @@ function speak(text) {
   utter.pitch = 1;
 
   function assignVoiceAndSpeak() {
-    const voices = window.speechSynthesis.getVoices();
-    // debug: uncomment to see all available voices in console
-    // console.log(voices.map(v => v.name + ' | ' + v.lang));
+  const voices = window.speechSynthesis.getVoices();
+  if (voices.length === 0) {
+    // retry after 100ms if voices not ready yet
+    setTimeout(assignVoiceAndSpeak, 100);
+    return;
+  }
+  console.log('ZH voices:', voices.filter(v => v.lang.startsWith('zh')).map(v => v.name + ' | ' + v.lang));
 
-    const isChinese = utter.lang.startsWith('zh');
-    const maleVoice = voices.find(v => {
-      const name = v.name.toLowerCase();
-      const langMatch = v.lang.startsWith(isChinese ? 'zh' : 'en');
-      if (!langMatch) return false;
-      if (isChinese) {
-  return name.includes('yunxi') ||
-         name.includes('yunyang') ||
-         name.includes('yunjian') ||
-         name.includes('kangkang') ||
-         name.includes('zhiwei') ||
-         name.includes('google 普通话') ||
-         name.includes('male') ||
-         name.includes('zh-cn male') ||
-         v.name.includes('男') ||
-         // Chrome on Windows
-         name.includes('microsoft yunxi') ||
-         name.includes('microsoft yunyang') ||
-         // Chrome on Mac
-         name.includes('tingting') === false && v.lang === 'zh-CN';
+  const isChinese = utter.lang.startsWith('zh');
+  const maleVoice = voices.find(v => {
+    const name = v.name.toLowerCase();
+    const langMatch = v.lang.startsWith(isChinese ? 'zh' : 'en');
+    if (!langMatch) return false;
+    if (isChinese) {
+      return name.includes('yunxi') ||
+             name.includes('yunyang') ||
+             name.includes('yunjian') ||
+             name.includes('kangkang') ||
+             name.includes('zhiwei') ||
+             name.includes('male') ||
+             v.name.includes('男');
     } else {
-        return name.includes('david') ||
-               name.includes('mark') ||
-               name.includes('daniel') ||
-               name.includes('alex') ||
-               name.includes('male');
-      }
-    });
-  // Chrome fallback: grab second zh-CN voice (usually male)
-  if (!maleVoice) {
+      return name.includes('david') ||
+             name.includes('mark') ||
+             name.includes('daniel') ||
+             name.includes('alex') ||
+             name.includes('male');
+    }
+  });
+
+  // Chrome fallback: second zh-CN voice is usually male
+  if (!maleVoice && isChinese) {
     const zhVoices = voices.filter(v => v.lang.startsWith('zh-CN'));
-    console.log('ZH voices found:', zhVoices.map(v => v.name)); // debug
-    if (zhVoices.length > 1) utter.voice = zhVoices[1]; // index 1 = male on Chrome
+    if (zhVoices.length > 1) utter.voice = zhVoices[1];
     else if (zhVoices.length === 1) utter.voice = zhVoices[0];
-  } else {
+  } else if (maleVoice) {
     utter.voice = maleVoice;
   }
-    if (maleVoice) utter.voice = maleVoice;
-    window.speechSynthesis.speak(utter);
-  }
 
-  // voices already loaded
-  if (window.speechSynthesis.getVoices().length > 0) {
-    assignVoiceAndSpeak();
-  } else {
-    // wait for voices to load, then speak
-    window.speechSynthesis.onvoiceschanged = () => {
-      window.speechSynthesis.onvoiceschanged = null; // run once only
-      assignVoiceAndSpeak();
-    };
-  }
+  window.speechSynthesis.speak(utter);
+}
+
+assignVoiceAndSpeak();
 }
 function md(t){
   return t
