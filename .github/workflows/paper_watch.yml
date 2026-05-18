@@ -1,0 +1,33 @@
+name: Daily Paper Digest
+
+on:
+  schedule:
+    - cron: '0 1 * * *'    # 9:00 AM SGT (UTC+8 = UTC-8hrs)
+  workflow_dispatch:        # ← manual "Run" button in GitHub UI
+
+jobs:
+  fetch-papers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run paper watcher
+        env:
+          GIST_ID:  ${{ secrets.GIST_ID }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GROQ_KEY: ${{ secrets.GROQ_KEY }}
+        run: python scripts/paper_watch.py
+
+      - name: Confirm output
+        run: echo "Paper digest complete for $(date '+%Y-%m-%d')"
