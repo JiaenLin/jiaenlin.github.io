@@ -303,46 +303,57 @@ function speak(text) {
 
   function assignVoiceAndSpeak() {
   const voices = window.speechSynthesis.getVoices();
-  if (voices.length === 0) {
-    // retry after 100ms if voices not ready yet
-    setTimeout(assignVoiceAndSpeak, 100);
-    return;
-  }
-  console.log('ZH voices:', voices.filter(v => v.lang.startsWith('zh')).map(v => v.name + ' | ' + v.lang));
+  if (voices.length === 0) { setTimeout(assignVoiceAndSpeak, 100); return; }
 
   const isChinese = utter.lang.startsWith('zh');
-  const maleVoice = voices.find(v => {
-    const name = v.name.toLowerCase();
-    const langMatch = v.lang.startsWith(isChinese ? 'zh' : 'en');
-    if (!langMatch) return false;
-    if (isChinese) {
-      return name.includes('yunxi') ||
-             name.includes('yunyang') ||
-             name.includes('yunjian') ||
-             name.includes('kangkang') ||
-             name.includes('zhiwei') ||
-             name.includes('male') ||
-             v.name.includes('男');
-    } else {
-      return name.includes('david') ||
-             name.includes('mark') ||
-             name.includes('daniel') ||
-             name.includes('alex') ||
-             name.includes('male');
-    }
-  });
 
-  // Chrome fallback: second zh-CN voice is usually male
-  if (maleVoice) {
-    utter.voice = maleVoice;  // matched by name (kangkang, yunxi, etc.)
-  } else if (isChinese) {
-    // fallback for browsers without named male zh voices
-    const zhVoices = voices.filter(v => v.lang.startsWith('zh'));
-    if (zhVoices.length > 1) utter.voice = zhVoices[1];
+  // Priority list: higher index = higher priority (will overwrite lower)
+  const zhMalePriority = ['zhiwei','yunjian','yunyang','yunxi','kangkang'];
+  const enMalePriority = ['male','alex','daniel','mark','david'];
+  const priority = isChinese ? zhMalePriority : enMalePriority;
+
+  // Filter to correct language group first
+  const langVoices = voices.filter(v =>
+    v.lang.startsWith(isChinese ? 'zh' : 'en')
+  );
+
+  // Pick best match by priority rank
+  let maleVoice = null;
+  let bestRank = -1;
+
+  for (const v of langVoices) {
+    const name = v.name.toLowerCase();
+    // Check explicit male keywords
+    const rank = priority.findIndex(keyword => name.includes(keyword));
+    if (rank > bestRank) {
+      bestRank = rank;
+      maleVoice = v;
+    }
+    // Also catch generic male indicators
+    if (bestRank === -1 && (name.includes('male') || v.name.includes('男'))) {
+      maleVoice = v;
+    }
   }
 
+// Prefer zh-CN over zh-TW/zh-HK if multiple candidates match same rank
+  if (maleVoice && isChinese && !maleVoice.lang.startsWith('zh-CN')) {
+    const cnMatch = langVoices.find(v => {
+      const name = v.name.toLowerCase();
+    return v.lang === 'zh-CN' && priority.some(k => name.includes(k));
+    });
+    if (cnMatch) maleVoice = cnMatch;
+  }
+
+  // Fallback: second zh voice (usually male on Chrome)
+  if (!maleVoice && isChinese) {
+    const zhVoices = voices.filter(v => v.lang.startsWith('zh'));
+    if (zhVoices.length > 1) maleVoice = zhVoices[1];
+  }
+
+  if (maleVoice) utter.voice = maleVoice;
+  console.log('Selected voice:', maleVoice?.name, maleVoice?.lang);
   window.speechSynthesis.speak(utter);
-}
+  }
 
 assignVoiceAndSpeak();
 }
