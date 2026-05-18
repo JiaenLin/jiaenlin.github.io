@@ -142,6 +142,14 @@
       box-shadow: 0 8px 24px oklch(from var(--color-primary) l c h / 0.12);
       border-color: var(--color-primary-highlight);
     }
+    .countdown-arrow {
+      flex: 1;
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--color-primary);
+      opacity: 0.4;
+      letter-spacing: 4px;
+    }
     .countdown-left {
       display: flex;
       align-items: center;
@@ -454,6 +462,7 @@
               <div class="countdown-label-text" id="cd-label">1 Year as PhD</div>
             </div>
           </div>
+          <div class="countdown-arrow">➤ ➤ ➤</div>
           <div class="countdown-time">
             <span class="countdown-dot"></span>
             <span id="cd-time">Loading…</span>
