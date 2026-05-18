@@ -333,12 +333,12 @@ function speak(text) {
   });
 
   // Chrome fallback: second zh-CN voice is usually male
-  if (!maleVoice && isChinese) {
-    const zhVoices = voices.filter(v => v.lang.startsWith('zh-CN'));
+  if (maleVoice) {
+    utter.voice = maleVoice;  // matched by name (kangkang, yunxi, etc.)
+  } else if (isChinese) {
+    // fallback for browsers without named male zh voices
+    const zhVoices = voices.filter(v => v.lang.startsWith('zh'));
     if (zhVoices.length > 1) utter.voice = zhVoices[1];
-    else if (zhVoices.length === 1) utter.voice = zhVoices[0];
-  } else if (maleVoice) {
-    utter.voice = maleVoice;
   }
 
   window.speechSynthesis.speak(utter);
