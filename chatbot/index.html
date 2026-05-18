@@ -445,6 +445,114 @@ if (!SpeechRecognition) {
     }
   };
 }
+// ══════════════════════════════════════════════
+// TODAY'S PAPERS BUTTON
+// ══════════════════════════════════════════════
+const WORKER_BASE = 'https://jiaen-digital-twin.jiaenlin999.workers.dev';
+
+function buildPaperButton() {
+  const btn = document.createElement('button');
+  btn.className   = 'chip';
+  btn.id          = 'paper-chip';
+  btn.textContent = isZh ? '📄 今日论文' : '📄 Today\'s Papers';
+  btn.style.cssText = [
+    'border-color:var(--primary)',
+    'color:var(--primary)',
+    'font-weight:600',
+    'flex-shrink:0',
+  ].join(';');
+
+  btn.addEventListener('click', async () => {
+    if (streaming) return;
+
+    // Hide chips, show loading
+    chipsEl.style.display = 'none';
+    const loadRow = makeRow('assistant');
+    loadRow.querySelector('.bubble').textContent =
+      isZh ? '⏳ 正在加载今日论文…' : '⏳ Loading today\'s papers…';
+    msgs.appendChild(loadRow);
+    scroll();
+
+    try {
+      const data = await fetch(`${WORKER_BASE}/papers`)
+        .then(r => r.json());
+
+      // Not ready yet
+      if (!data.ready) {
+        loadRow.querySelector('.bubble').innerHTML =
+          `<span style="color:var(--muted)">${data.message}</span>`;
+        return;
+      }
+
+      // Group by journal
+      const byJournal = {};
+      data.papers.forEach(p => {
+        if (!byJournal[p.journal]) byJournal[p.journal] = [];
+        byJournal[p.journal].push(p);
+      });
+
+      // Header
+      const header = isZh
+        ? `📚 <b>今日论文 — ${data.date}</b>（共 ${data.count} 篇）<br><br>`
+        : `📚 <b>Today's Papers — ${data.date}</b> &nbsp;(${data.count} papers)<br><br>`;
+
+      // Body — one section per journal
+      const body = Object.entries(byJournal).map(([journal, papers]) => {
+        const items = papers.map(p => `
+          <div style="margin-bottom:10px">
+            <a href="${p.url}" target="_blank" rel="noopener"
+               style="font-weight:600;color:var(--text);
+                      font-size:.87rem;line-height:1.4;display:block">
+              ${p.title}
+            </a>
+            <div style="font-size:.74rem;color:var(--muted);margin:2px 0">
+              ${p.authors}
+            </div>
+            <div style="font-size:.82rem;color:var(--text);font-style:italic">
+              💡 ${p.summary}
+            </div>
+          </div>
+        `).join('');
+
+        return `
+          <div style="margin-bottom:14px">
+            <div style="font-size:.72rem;font-weight:700;
+                        text-transform:uppercase;letter-spacing:.07em;
+                        color:var(--primary);margin-bottom:6px;
+                        padding-bottom:4px;
+                        border-bottom:1px solid var(--border)">
+              ${journal}
+            </div>
+            ${items}
+          </div>
+        `;
+      }).join('');
+
+      loadRow.querySelector('.bubble').innerHTML = header + body;
+      scroll();
+
+    } catch (err) {
+      loadRow.querySelector('.bubble').innerHTML =
+        `<span style="color:var(--muted)">
+          ${isZh
+            ? '无法加载论文，请稍后重试。'
+            : 'Could not load papers — try again later.'}
+        </span>`;
+    }
+  });
+
+  return btn;
+}
+
+// Prepend to chips so it's always first
+chipsEl.prepend(buildPaperButton());
+
+// Re-add after clear chat (clearBtn resets chips display)
+document.getElementById('clearBtn').addEventListener('click', () => {
+  if (!document.getElementById('paper-chip')) {
+    chipsEl.prepend(buildPaperButton());
+  }
+});
 </script>
 </body>
 </html>
