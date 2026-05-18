@@ -298,6 +298,7 @@ function speak(text) {
     .trim();
   const utter = new SpeechSynthesisUtterance(plain.slice(0, 500));
   utter.lang = document.documentElement.lang.startsWith('zh') ? 'zh-CN' : 'en-US';
+  console.log('Page lang:', document.documentElement.lang, '→ utter.lang:', utter.lang);
   utter.rate = 1.4;
   utter.pitch = 1;
 
