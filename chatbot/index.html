@@ -81,7 +81,7 @@ textarea::placeholder{color:var(--faint)}
     <div class="avatar">J</div>
     <div class="id-text">
       <h1>Jiaen Lin</h1>
-      <p><span class="dot"></span>Digital Twin · Computational Biologist</p>
+      <p><span class="dot"></span><span id="header-subtitle">Digital Twin · Computational Biologist</span></p>
     </div>
   </div>
   <div style="display:flex;gap:6px">
@@ -103,7 +103,7 @@ textarea::placeholder{color:var(--faint)}
 <div class="messages" id="msgs" role="log" aria-live="polite">
   <div class="row assistant">
     <div class="mavatar">J</div>
-    <div class="bubble">Hi! I'm Jiaen Lin's AI digital twin Jayce🧬 Ask me about my research in single-cell RNA-seq, multi-omics, or anything about my work and collaborations!</div>
+    <div class="bubble" id="welcome-bubble">Hi! I'm Jiaen Lin's AI digital twin Jayce🧬 Ask me about my research in single-cell RNA-seq, multi-omics, or anything about my work and collaborations!</div>
   </div>
 </div>
 
@@ -112,17 +112,11 @@ textarea::placeholder{color:var(--faint)}
   <div class="tdots"><span></span><span></span><span></span></div>
 </div>
 
-<div class="chips" id="chips">
-  <button class="chip" data-p="What is your current research focus?">Current research</button>
-  <button class="chip" data-p="Tell me about RegStatusNet.">RegStatusNet</button>
-  <button class="chip" data-p="What programming tools do you use?">Tech stack</button>
-  <button class="chip" data-p="Are you open to collaborations?">Collaborations</button>
-  <button class="chip" data-p="How do you integrate multi-omics data?">Multi-omics</button>
-</div>
+<div class="chips" id="chips"></div>
 
 <form class="inputbar" id="form" onsubmit="return false">
-  <textarea id="input" placeholder="Ask Jiaen anything…" rows="1" aria-label="Message"></textarea>
-  <button class="micbtn" id="micBtn" type="button" aria-label="Voice input" title="Speak your question">
+  <textarea id="input" rows="1" aria-label="Message"></textarea>
+  <button class="micbtn" id="micBtn" type="button" aria-label="Voice input">
     <svg id="mic-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
   </button>
   <button class="sendbtn" id="sendBtn" disabled aria-label="Send">
@@ -131,31 +125,97 @@ textarea::placeholder{color:var(--faint)}
 </form>
 
 <script>
-// Read lang from parent via URL param
+// ── Language Setup ───────────────────────────────────────────────
 const urlParams = new URLSearchParams(window.location.search);
 const siteLang = urlParams.get('lang') || 'en';
-document.documentElement.lang = siteLang;
+const isZh = siteLang.startsWith('zh');
+document.documentElement.lang = isZh ? 'zh-Hans' : 'en';
+
+// All UI strings in one place
+const I18N = {
+  en: {
+    subtitle:       'Digital Twin · Computational Biologist',
+    welcome:        'Hi! I\'m Jiaen Lin\'s AI digital twin Jayce\uD83E\uDDEC Ask me about my research in single-cell RNA-seq, multi-omics, or anything about my work and collaborations!',
+    placeholder:    'Ask Jayce anything…',
+    listening:      'Listening…',
+    micTitle:       'Speak your question',
+    micStop:        'Listening… click to stop',
+    micError:       'Mic error — try again',
+    connError:      'Connection error — please try again.',
+    userAvatar:     'You',
+    chips: [
+      { label: 'Current research',  prompt: 'What is your current research focus?' },
+      { label: 'Tech stack',        prompt: 'What programming tools do you use?' },
+      { label: 'Collaborations',    prompt: 'Are you open to collaborations?' },
+      { label: 'Multi-omics',       prompt: 'How do you integrate multi-omics data?' },
+    ],
+  },
+  zh: {
+    subtitle:       'AI分身 · 计算生物学家',
+    welcome:        '你好！我是林佳恩的AI数字分身Jayce🧬 你可以问我关于单细胞RNA测序、多组学研究，或任何关于我的工作与合作的问题！',
+    placeholder:    '问Jayce任何问题…',
+    listening:      '正在聆听…',
+    micTitle:       '语音提问',
+    micStop:        '正在聆听… 点击停止',
+    micError:       '麦克风错误，请重试',
+    connError:      '连接失败，请重试。',
+    userAvatar:     '你',
+    chips: [
+      { label: '当前研究方向',  prompt: '你目前的研究重点是什么？' },
+      { label: '技术',       prompt: '你使用哪些编程工具？' },
+      { label: '合作机会',     prompt: '你是否开放科研合作？' },
+      { label: '多组学整合',   prompt: '你如何整合多组学数据？' },
+    ],
+  },
+};
+
+const T = isZh ? I18N.zh : I18N.en;
+
+// Apply static strings on load
+document.getElementById('header-subtitle').textContent = T.subtitle;
+document.getElementById('welcome-bubble').textContent  = T.welcome;
+document.getElementById('input').placeholder           = T.placeholder;
+document.getElementById('micBtn').title                = T.micTitle;
+
+// Render chips
+const chipsEl = document.getElementById('chips');
+T.chips.forEach(({ label, prompt }) => {
+  const btn = document.createElement('button');
+  btn.className  = 'chip';
+  btn.dataset.p  = prompt;
+  btn.textContent = label;
+  chipsEl.appendChild(btn);
+});
+
+// ── Core Setup ───────────────────────────────────────────────────
 const WORKER = "https://jiaen-digital-twin.jiaenlin999.workers.dev/chat";
 window.speechSynthesis.getVoices();
 let history = [], streaming = false;
 
-const msgs = document.getElementById("msgs");
-const input = document.getElementById("input");
+const msgs    = document.getElementById("msgs");
+const input   = document.getElementById("input");
 const sendBtn = document.getElementById("sendBtn");
-const typing = document.getElementById("typing");
-const chips = document.getElementById("chips");
+const typing  = document.getElementById("typing");
+
 function getVisitorId() {
   let id = localStorage.getItem("jl_visitor_id");
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem("jl_visitor_id", id);
-  }
+  if (!id) { id = crypto.randomUUID(); localStorage.setItem("jl_visitor_id", id); }
   return id;
 }
-// Theme toggle
+
+// ── Theme toggle ─────────────────────────────────────────────────
 let dark = matchMedia("(prefers-color-scheme:dark)").matches;
 setTheme(dark);
-document.getElementById("themeBtn").onclick = () => { dark=!dark; setTheme(dark); };
+document.getElementById("themeBtn").onclick = () => { dark = !dark; setTheme(dark); };
+
+function setTheme(d) {
+  document.documentElement.setAttribute("data-theme", d ? "dark" : "light");
+  document.getElementById("themeBtn").innerHTML = d
+    ? '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>'
+    : '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+}
+
+// ── Voice output toggle ──────────────────────────────────────────
 let voiceEnabled = false;
 document.getElementById("muteBtn").onclick = () => {
   voiceEnabled = !voiceEnabled;
@@ -170,121 +230,114 @@ document.getElementById("muteBtn").onclick = () => {
         <line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>
        </svg>`;
 };
-function setTheme(d){
-  document.documentElement.setAttribute("data-theme",d?"dark":"light");
-  document.getElementById("themeBtn").innerHTML = d
-    ? '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>'
-    : '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
-}
 
-// Clear chat
+// ── Clear chat ───────────────────────────────────────────────────
 document.getElementById("clearBtn").onclick = () => {
   history = [];
-  window.speechSynthesis.cancel(); 
-  [...msgs.querySelectorAll(".row")].slice(1).forEach(r=>r.remove());
-  chips.style.display="flex";
+  window.speechSynthesis.cancel();
+  [...msgs.querySelectorAll(".row")].slice(1).forEach(r => r.remove());
+  chipsEl.style.display = "flex";
 };
 
-// Auto-resize textarea
+// ── Textarea auto-resize ─────────────────────────────────────────
 input.addEventListener("input", () => {
-  input.style.height="auto";
-  input.style.height=Math.min(input.scrollHeight,120)+"px";
+  input.style.height = "auto";
+  input.style.height = Math.min(input.scrollHeight, 120) + "px";
   sendBtn.disabled = !input.value.trim() || streaming;
 });
 
-// Enter to send
 input.addEventListener("keydown", e => {
-  if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); if(!sendBtn.disabled) send(); }
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (!sendBtn.disabled) send(); }
 });
 
-// Send button
-document.getElementById("form").addEventListener("submit", () => { if(!sendBtn.disabled) send(); });
+document.getElementById("form").addEventListener("submit", () => { if (!sendBtn.disabled) send(); });
 
-// Chips
-chips.addEventListener("click", e => {
+// ── Chips ────────────────────────────────────────────────────────
+chipsEl.addEventListener("click", e => {
   const c = e.target.closest(".chip");
-  if(!c||streaming) return;
-  input.value=c.dataset.p;
+  if (!c || streaming) return;
+  input.value = c.dataset.p;
   input.dispatchEvent(new Event("input"));
   send();
 });
 
-async function send(){
+// ── Send ─────────────────────────────────────────────────────────
+async function send() {
   const text = input.value.trim();
-  if(!text||streaming) return;
-  chips.style.display="none";
+  if (!text || streaming) return;
+  chipsEl.style.display = "none";
   addMsg("user", text);
-  history.push({role:"user",content:text});
-  input.value=""; input.style.height="auto"; sendBtn.disabled=true; streaming=true;
+  history.push({ role: "user", content: text });
+  input.value = ""; input.style.height = "auto"; sendBtn.disabled = true; streaming = true;
   typing.classList.add("on"); scroll();
 
-  const row = makeRow("assistant");
+  const row    = makeRow("assistant");
   const bubble = row.querySelector(".bubble");
 
   try {
     const res = await fetch(WORKER, {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({
-      messages: history,
-      visitorId: getVisitorId()
-    })
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages: history, visitorId: getVisitorId() })
     });
-    if(!res.ok) throw new Error("HTTP "+res.status);
+    if (!res.ok) throw new Error("HTTP " + res.status);
 
     typing.classList.remove("on");
     msgs.appendChild(row); scroll();
 
     const reader = res.body.getReader();
-    const dec = new TextDecoder();
-    let buf="", full="";
+    const dec    = new TextDecoder();
+    let buf = "", full = "";
 
-    while(true){
-      const {done,value}=await reader.read();
-      if(done) break;
-      buf+=dec.decode(value,{stream:true});
-      const lines=buf.split("\n"); buf=lines.pop();
-      for(const line of lines){
-        if(!line.startsWith("data: ")) continue;
-        const d=line.slice(6).trim();
-        if(d==="[DONE]") continue;
-        try{
-          const t=JSON.parse(d).response||JSON.parse(d).choices?.[0]?.delta?.content||"";
-          if(t){ full+=t; bubble.innerHTML=md(full); scroll(); }
-        }catch{}
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const lines = buf.split("\n"); buf = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        const d = line.slice(6).trim();
+        if (d === "[DONE]") continue;
+        try {
+          const t = JSON.parse(d).response || JSON.parse(d).choices?.[0]?.delta?.content || "";
+          if (t) { full += t; bubble.innerHTML = md(full); scroll(); }
+        } catch {}
       }
     }
-    history.push({role:"assistant",content:full});
-    speak(full); 
-  } catch(err){
+    history.push({ role: "assistant", content: full });
+    speak(full);
+  } catch (err) {
     typing.classList.remove("on");
-    bubble.innerHTML='<span style="color:var(--muted)">Connection error — please try again.</span>';
-    if(!row.parentNode) msgs.appendChild(row);
+    bubble.innerHTML = `<span style="color:var(--muted)">${T.connError}</span>`;
+    if (!row.parentNode) msgs.appendChild(row);
   } finally {
-    streaming=false;
-    sendBtn.disabled=!input.value.trim();
+    streaming = false;
+    sendBtn.disabled = !input.value.trim();
     scroll();
   }
 }
 
-function addMsg(role,text){
-  const row=makeRow(role);
-  row.querySelector(".bubble").textContent=text;
+function addMsg(role, text) {
+  const row = makeRow(role);
+  row.querySelector(".bubble").textContent = text;
   msgs.appendChild(row); scroll();
 }
 
-function makeRow(role){
-  const row=document.createElement("div");
-  row.className="row "+role;
-  const av=document.createElement("div");
-  av.className="mavatar"; av.textContent=role==="assistant"?"J":"You";
-  const b=document.createElement("div");
-  b.className="bubble";
+function makeRow(role) {
+  const row = document.createElement("div");
+  row.className = "row " + role;
+  const av = document.createElement("div");
+  av.className   = "mavatar";
+  av.textContent = role === "assistant" ? "J" : T.userAvatar;
+  const b = document.createElement("div");
+  b.className = "bubble";
   row.appendChild(av); row.appendChild(b);
   return row;
 }
 
-function scroll(){ msgs.scrollTo({top:msgs.scrollHeight,behavior:"smooth"}); }
+function scroll() { msgs.scrollTo({ top: msgs.scrollHeight, behavior: "smooth" }); }
+
+// ── Text-to-speech ───────────────────────────────────────────────
 function speak(text) {
   if (!window.speechSynthesis || !voiceEnabled) return;
   window.speechSynthesis.cancel();
@@ -296,82 +349,55 @@ function speak(text) {
     .replace(/#+\s/g, '')
     .replace(/<[^>]+>/g, '')
     .trim();
-  const utter = new SpeechSynthesisUtterance(plain.slice(0, 500));
-  utter.lang = document.documentElement.lang.startsWith('zh') ? 'zh-CN' : 'en-US';
-  console.log('Page lang:', document.documentElement.lang, '→ utter.lang:', utter.lang);
-  utter.rate = 1.4;
-  utter.pitch = 1;
+  const utter   = new SpeechSynthesisUtterance(plain.slice(0, 500));
+  utter.lang    = isZh ? 'zh-CN' : 'en-US';
+  utter.rate    = 1.4;
+  utter.pitch   = 1;
 
   function assignVoiceAndSpeak() {
-  const voices = window.speechSynthesis.getVoices();
-  if (voices.length === 0) { setTimeout(assignVoiceAndSpeak, 100); return; }
-
-  const isChinese = utter.lang.startsWith('zh');
-
-  // Priority list: higher index = higher priority (will overwrite lower)
-  const zhMalePriority = ['zhiwei','yunjian','yunyang','yunxi','kangkang'];
-  const enMalePriority = ['male','alex','daniel','mark','david'];
-  const priority = isChinese ? zhMalePriority : enMalePriority;
-
-  // Filter to correct language group first
-  const langVoices = voices.filter(v =>
-    v.lang.startsWith(isChinese ? 'zh' : 'en')
-  );
-
-  // Pick best match by priority rank
-  let maleVoice = null;
-  let bestRank = -1;
-
-  for (const v of langVoices) {
-    const name = v.name.toLowerCase();
-    // Check explicit male keywords
-    const rank = priority.findIndex(keyword => name.includes(keyword));
-    if (rank > bestRank) {
-      bestRank = rank;
-      maleVoice = v;
-    }
-    // Also catch generic male indicators
-    if (bestRank === -1 && (name.includes('male') || v.name.includes('男'))) {
-      maleVoice = v;
-    }
-  }
-
-// Prefer zh-CN over zh-TW/zh-HK if multiple candidates match same rank
-  if (maleVoice && isChinese && !maleVoice.lang.startsWith('zh-CN')) {
-    const cnMatch = langVoices.find(v => {
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length === 0) { setTimeout(assignVoiceAndSpeak, 100); return; }
+    const zhMalePriority = ['zhiwei','yunjian','yunyang','yunxi','kangkang'];
+    const enMalePriority = ['male','alex','daniel','mark','david'];
+    const priority = isZh ? zhMalePriority : enMalePriority;
+    const langVoices = voices.filter(v => v.lang.startsWith(isZh ? 'zh' : 'en'));
+    let maleVoice = null, bestRank = -1;
+    for (const v of langVoices) {
       const name = v.name.toLowerCase();
-    return v.lang === 'zh-CN' && priority.some(k => name.includes(k));
-    });
-    if (cnMatch) maleVoice = cnMatch;
+      const rank = priority.findIndex(k => name.includes(k));
+      if (rank > bestRank) { bestRank = rank; maleVoice = v; }
+      if (bestRank === -1 && (name.includes('male') || v.name.includes('男'))) maleVoice = v;
+    }
+    if (maleVoice && isZh && !maleVoice.lang.startsWith('zh-CN')) {
+      const cnMatch = langVoices.find(v => v.lang === 'zh-CN' && priority.some(k => v.name.toLowerCase().includes(k)));
+      if (cnMatch) maleVoice = cnMatch;
+    }
+    if (!maleVoice && isZh) {
+      const zhVoices = voices.filter(v => v.lang.startsWith('zh'));
+      if (zhVoices.length > 1) maleVoice = zhVoices[1];
+    }
+    if (maleVoice) utter.voice = maleVoice;
+    window.speechSynthesis.speak(utter);
   }
-
-  // Fallback: second zh voice (usually male on Chrome)
-  if (!maleVoice && isChinese) {
-    const zhVoices = voices.filter(v => v.lang.startsWith('zh'));
-    if (zhVoices.length > 1) maleVoice = zhVoices[1];
-  }
-
-  if (maleVoice) utter.voice = maleVoice;
-  console.log('Selected voice:', maleVoice?.name, maleVoice?.lang);
-  window.speechSynthesis.speak(utter);
-  }
-
-assignVoiceAndSpeak();
+  assignVoiceAndSpeak();
 }
-function md(t){
+
+// ── Markdown renderer ────────────────────────────────────────────
+function md(t) {
   return t
-    .replace(/```[\w]*\n?([\s\S]*?)```/g,(_,c)=>`<pre><code>${esc(c.trim())}</code></pre>`)
-    .replace(/`([^`]+)`/g,(_,c)=>`<code>${esc(c)}</code>`)
-    .replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>")
-    .replace(/\*(.+?)\*/g,"<em>$1</em>")
-    .replace(/^### (.+)$/gm,"<strong>$1</strong>")
-    .replace(/^## (.+)$/gm,"<strong>$1</strong>")
-    .replace(/^\s*[-*] (.+)$/gm,"<li>$1</li>")
-    .replace(/(<li>.*<\/li>)/gs,"<ul style='padding-left:1.2em;margin:4px 0'>$1</ul>")
-    .replace(/\n\n+/g,"<br><br>")
-    .replace(/\n/g,"<br>");
+    .replace(/```[\w]*\n?([\s\S]*?)```/g, (_, c) => `<pre><code>${esc(c.trim())}</code></pre>`)
+    .replace(/`([^`]+)`/g,       (_, c) => `<code>${esc(c)}</code>`)
+    .replace(/\*\*(.+?)\*\*/g,   "<strong>$1</strong>")
+    .replace(/\*(.+?)\*/g,       "<em>$1</em>")
+    .replace(/^### (.+)$/gm,     "<strong>$1</strong>")
+    .replace(/^## (.+)$/gm,      "<strong>$1</strong>")
+    .replace(/^\s*[-*] (.+)$/gm, "<li>$1</li>")
+    .replace(/(<li>.*<\/li>)/gs, "<ul style='padding-left:1.2em;margin:4px 0'>$1</ul>")
+    .replace(/\n\n+/g,           "<br><br>")
+    .replace(/\n/g,              "<br>");
 }
-function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function esc(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
 // ── Voice input ──────────────────────────────────────────────────
 const micBtn = document.getElementById("micBtn");
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -379,41 +405,34 @@ const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecogni
 if (!SpeechRecognition) {
   micBtn.style.display = "none";
 } else {
-  const recognition = new SpeechRecognition();
-  recognition.continuous = false;
+  const recognition   = new SpeechRecognition();
+  recognition.continuous    = false;
   recognition.interimResults = true;
-  recognition.lang = "en-US";
+  recognition.lang          = isZh ? "zh-CN" : "en-US";
   let isListening = false;
 
   micBtn.addEventListener("click", () => {
-    if (isListening) {
-      recognition.stop();
-    } else {
-      const lang = document.documentElement.lang || "en";
-      recognition.lang = lang.startsWith("zh") ? "zh-CN" : "en-US";
-      recognition.start();
-    }
+    if (isListening) recognition.stop();
+    else recognition.start();
   });
 
   recognition.onstart = () => {
     isListening = true;
     micBtn.classList.add("listening");
-    micBtn.title = "Listening… click to stop";
-    input.placeholder = "Listening…";
+    micBtn.title         = T.micStop;
+    input.placeholder    = T.listening;
   };
 
   recognition.onresult = (e) => {
-    const transcript = Array.from(e.results)
-      .map(r => r[0].transcript).join("");
-    input.value = transcript;
+    input.value = Array.from(e.results).map(r => r[0].transcript).join("");
     input.dispatchEvent(new Event("input"));
   };
 
   recognition.onend = () => {
     isListening = false;
     micBtn.classList.remove("listening");
-    micBtn.title = "Speak your question";
-    input.placeholder = "Ask Jiaen anything…";
+    micBtn.title      = T.micTitle;
+    input.placeholder = T.placeholder;
     if (input.value.trim()) send();
   };
 
@@ -421,8 +440,8 @@ if (!SpeechRecognition) {
     isListening = false;
     micBtn.classList.remove("listening");
     if (e.error !== "no-speech") {
-      input.placeholder = "Mic error — try again";
-      setTimeout(() => input.placeholder = "Ask Jiaen anything…", 2000);
+      input.placeholder = T.micError;
+      setTimeout(() => input.placeholder = T.placeholder, 2000);
     }
   };
 }
