@@ -293,6 +293,21 @@
       .contact-grid{grid-template-columns:1fr}
       .nav-links a:not(:last-child){display:none}
       .nav-links{gap:var(--space-4)}
+      .countdown-card {
+        flex-wrap: wrap;
+        gap: var(--space-2);
+        padding: var(--space-3) var(--space-4);
+      }
+      .countdown-left {
+        flex: 1 1 100%;
+      }
+      .countdown-arrow {
+        display: none;
+      }
+      .countdown-time {
+        flex: 1 1 100%;
+        justify-content: center;
+      }
     }
     @media(max-width:480px){
       .interests-grid{grid-template-columns:1fr}
