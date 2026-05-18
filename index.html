@@ -152,10 +152,11 @@
       line-height: 1;
     }
     .countdown-label-text {
-      font-size: var(--text-sm);
+      font-size: var(--text-base);
       font-weight: 600;
       color: var(--color-text);
       letter-spacing: -0.01em;
+      white-space: nowrap; 
     }
     .countdown-sublabel {
       font-size: var(--text-xs);
@@ -451,7 +452,6 @@
             <span class="countdown-icon" id="cd-icon">🎓</span>
             <div>
               <div class="countdown-label-text" id="cd-label">1 Year as PhD</div>
-              <div class="countdown-sublabel" id="cd-sublabel">Aug 1, 2026</div>
             </div>
           </div>
           <div class="countdown-time">
@@ -770,15 +770,12 @@ let currentLang = 'en';
   const CD_EVENT_DATE   = '2026-08-01T00:00:00';
   const CD_LABEL_EN     = '1 Year as PhD';
   const CD_LABEL_ZH     = '博士毕业一周年';
-  const CD_SUBLABEL_EN  = 'Aug 1, 2026';
-  const CD_SUBLABEL_ZH  = '2026年8月1日';
   const CD_ICON         = '🎓';
 
   (function() {
     const EVENT    = new Date(CD_EVENT_DATE);
     const time     = document.getElementById('cd-time');
     const label    = document.getElementById('cd-label');
-    const sublabel = document.getElementById('cd-sublabel');
     const icon     = document.getElementById('cd-icon');
 
     icon.textContent = CD_ICON;
@@ -786,7 +783,6 @@ let currentLang = 'en';
     function applyLang() {
       const lang = document.documentElement.lang || 'en';
       label.textContent    = lang.startsWith('zh') ? CD_LABEL_ZH    : CD_LABEL_EN;
-      sublabel.textContent = lang.startsWith('zh') ? CD_SUBLABEL_ZH : CD_SUBLABEL_EN;
     }
 
     function update() {
