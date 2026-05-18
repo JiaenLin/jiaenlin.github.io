@@ -303,35 +303,47 @@ function speak(text) {
 
   function assignVoiceAndSpeak() {
   const voices = window.speechSynthesis.getVoices();
-  const isChinese = utter.lang.startsWith('zh');  // ← broad match
+  if (voices.length === 0) {
+    // retry after 100ms if voices not ready yet
+    setTimeout(assignVoiceAndSpeak, 100);
+    return;
+  }
+  console.log('ZH voices:', voices.filter(v => v.lang.startsWith('zh')).map(v => v.name + ' | ' + v.lang));
 
+  const isChinese = utter.lang.startsWith('zh');
   const maleVoice = voices.find(v => {
-    const name = v.name.toLowerCase();  // ← lowercase first
+    const name = v.name.toLowerCase();
+    const langMatch = v.lang.startsWith(isChinese ? 'zh' : 'en');
+    if (!langMatch) return false;
     if (isChinese) {
-      return name.includes('kangkang') ||
-             name.includes('yunxi')    ||
-             name.includes('yunyang')  ||
-             name.includes('yunjian')  ||
-             name.includes('zhiwei')   ||
-             name.includes('male')     ||
+      return name.includes('yunxi') ||
+             name.includes('yunyang') ||
+             name.includes('yunjian') ||
+             name.includes('kangkang') ||
+             name.includes('zhiwei') ||
+             name.includes('male') ||
              v.name.includes('男');
     } else {
-      return name.includes('david')  ||
-             name.includes('mark')   ||
+      return name.includes('david') ||
+             name.includes('mark') ||
              name.includes('daniel') ||
+             name.includes('alex') ||
              name.includes('male');
     }
   });
 
+  // Chrome fallback: second zh-CN voice is usually male
   if (maleVoice) {
-    utter.voice = maleVoice;
+    utter.voice = maleVoice;  // matched by name (kangkang, yunxi, etc.)
   } else if (isChinese) {
+    // fallback for browsers without named male zh voices
     const zhVoices = voices.filter(v => v.lang.startsWith('zh'));
     if (zhVoices.length > 1) utter.voice = zhVoices[1];
   }
 
   window.speechSynthesis.speak(utter);
 }
+
 assignVoiceAndSpeak();
 }
 function md(t){
