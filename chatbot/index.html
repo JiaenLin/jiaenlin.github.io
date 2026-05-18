@@ -332,6 +332,10 @@ function speak(text) {
 
   window.speechSynthesis.speak(utter);
 }
+const allVoices = window.speechSynthesis.getVoices();
+console.log("All voices:", allVoices.map(v => `${v.name} | ${v.lang}`));
+console.log("isChinese:", isChinese);
+console.log("utter.lang:", utter.lang);  
 assignVoiceAndSpeak();
 }
 function md(t){
