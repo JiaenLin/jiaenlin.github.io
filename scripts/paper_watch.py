@@ -24,7 +24,7 @@ JOURNALS = {
 def fetch_papers(issn, journal_name, max_results=4):
     # With this (searches last 3 days):
     from datetime import date, timedelta
-    THREE_DAYS_AGO = str(date.today() - timedelta(days=3))
+    THREE_DAYS_AGO = str(date.today() - timedelta(days=30))
 
     query = (
         f'{issn}[ISSN] AND '
