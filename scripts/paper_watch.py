@@ -44,26 +44,44 @@ SPECIALIST_JOURNALS = {
 
 # ── Biology filter — only for Nature & Science ────────────────
 BIO_TERMS = (
-    # Molecular & cell biology
-    'biology OR biochemistry OR '
+    # Must be molecular/cellular biology
+    '"molecular biology" OR "cell biology" OR "systems biology" OR '
     'genomics OR transcriptomics OR proteomics OR metabolomics OR '
     'epigenetics OR "gene expression" OR chromatin OR '
-    # Sequencing methods
-    'single-cell OR RNA-seq OR scRNA-seq OR "ATAC-seq" OR '
-    '"ChIP-seq" OR "spatial transcriptomics" OR multi-omics OR '
-    # Functional genomics
-    'CRISPR OR "gene editing" OR '
-    '"gene regulation" OR "transcription factor" OR '
-    # Disease & clinical
-    'cancer OR tumor OR disease OR '
-    'immune OR inflammation OR therapy OR '
-    # Systems & development
-    'neuroscience OR "stem cell" OR development OR differentiation OR '
-    'organoid OR evolution OR '
-    # Metabolism
-    'metabolism OR metabolic OR mitochondria'
-)
 
+    # Sequencing methods — very specific
+    '"single-cell" OR "scRNA-seq" OR "snRNA-seq" OR "spatial transcriptomics" OR '
+    '"multi-omics" OR "ATAC-seq" OR "ChIP-seq" OR "RNA sequencing" OR '
+
+    # Functional genomics
+    'CRISPR OR "gene editing" OR "transcription factor" OR '
+    '"gene regulation" OR "enhancer" OR "epigenome" OR '
+
+    # Specific biology subfields
+    'neuroscience OR "stem cell" OR "organoid" OR '
+    '"cell differentiation" OR "cell signaling" OR '
+    '"cancer biology" OR "tumor microenvironment" OR '
+
+    # Specific omics/metabolism
+    '"single cell" OR "cell atlas" OR ferroptosis OR '
+    '"metabolic pathway" OR mitochondria OR microbiome OR '
+    '"heart failure" OR cardiomyocyte OR "immune cell"'
+)
+# ── Post-fetch biology title filter ───────────────────────────
+EXCLUDE_KEYWORDS = [
+    'switching device', 'antiferromagnet', 'quantum', 'photon',
+    'climate', 'earthquake', 'asteroid', 'telescope', 'physics',
+    'wastewater surveillance', 'public health policy', 'administration cuts',
+    'CDC cuts', 'political', 'election', 'economics', 'fossil fuel',
+    'semiconductor', 'material science', 'superconductor',
+]
+# ── Helper: post filter ────────────────────────────
+def is_biology(title, abstract):
+    text = (title + ' ' + abstract).lower()
+    # Reject if any hard-exclude keyword found
+    if any(kw.lower() in text for kw in EXCLUDE_KEYWORDS):
+        return False
+    return True
 # ── Helper: add NCBI key to params ────────────────────────────
 def ncbi_params(extra: dict) -> dict:
     p = {**extra}
@@ -137,7 +155,9 @@ def fetch_papers(journal_ta, journal_name, max_results=5, use_bio_filter=True):
 
             if not title or not abstract:
                 continue
-
+            if not is_biology(title, abstract):
+                 print(f'  ⚠️ Filtered out: {title[:50]}')
+                continue
             authors = article.findall('.//Author')
             names   = []
             for a in authors[:3]:
