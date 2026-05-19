@@ -18,14 +18,19 @@ TODAY = str(date.today())
 FROM  = str(date.today() - timedelta(days=3))
 
 JOURNALS = {
+    # Original
     'Nature':                '0028-0836',
     'Science':               '0036-8075',
     'Cell':                  '0092-8674',
     'Nature Methods':        '1548-7091',
-    'Nature Communications': '2041-1723',
-    'Cell Reports':          '2211-1247',
-    'Genome Biology':        '1474-760X',
     'Nature Biotechnology':  '1087-0156',
+
+    # Your additions
+    'Cell Metabolism':       '1550-4131',
+    'Nature Metabolism':     '2522-5812',
+    'Cell Stem Cell':        '1934-5909',
+    'Nature Cell Biology':   '1465-7392',
+    'Nature Neuroscience':   '1097-6256',
 }
 
 BIO_TERMS = (
