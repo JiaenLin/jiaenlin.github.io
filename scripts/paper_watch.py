@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Daily paper watcher — Nature, Science, Cell + journals
+Daily paper watcher — Nature, Science, Cell + specialist journals
 Uses NCBI API key (10 req/sec) + Groq for summaries
 Stores result to GitHub Gist
 """
@@ -12,35 +12,60 @@ from xml.etree import ElementTree as ET
 GIST_ID  = os.environ.get('GIST_ID',  '')
 GH_TOKEN = os.environ.get('GH_TOKEN', '')
 GROQ_KEY = os.environ.get('GROQ_KEY', '')
-NCBI_KEY = os.environ.get('NCBI_KEY', '')   # ← new
+NCBI_KEY = os.environ.get('NCBI_KEY', '')
 
 TODAY = str(date.today())
-FROM  = str(date.today() - timedelta(days=7))
+FROM  = str(date.today() - timedelta(days=2))
 
-JOURNALS = {
-    # Original
-    'Nature':                '0028-0836',
-    'Science':               '0036-8075',
+# ── Broad journals: need biology keyword filter ────────────────
+BROAD_JOURNALS = {
+    'Nature':   '0028-0836',
+    'Science':  '0036-8075',
+    'Nature Computational Science':'2662-8457',    
+}
+
+# ── Specialist biology journals: fetch all papers ──────────────
+SPECIALIST_JOURNALS = {
     'Cell':                  '0092-8674',
     'Nature Methods':        '1548-7091',
     'Nature Biotechnology':  '1087-0156',
-
-    # Your additions
     'Cell Metabolism':       '1550-4131',
     'Nature Metabolism':     '2522-5812',
     'Cell Stem Cell':        '1934-5909',
     'Nature Cell Biology':   '1465-7392',
     'Nature Neuroscience':   '1097-6256',
+    'Nature Genetics':       '1061-4036',  
+    'Nature Medicine':       '1078-8956',  
+    'Circulation':            '0009-7322',
+    'Neuron':                 '0896-6273',
+    'Cancer Cell':            '1535-6108',
+    'Nature Machine Intelligence':   '2522-5839',
+    
 }
 
+# ── Biology filter — only for Nature & Science ────────────────
 BIO_TERMS = (
-    'biology OR genomics OR transcriptomics OR single-cell OR '
-    'RNA-seq OR proteomics OR metabolomics OR CRISPR OR '
-    'neuroscience OR stem cell OR cancer OR epigenetics OR '
-    'bioinformatics OR multi-omics'
+    # Molecular & cell biology
+    'biology OR cell OR molecular OR biochemistry OR '
+    'genomics OR transcriptomics OR proteomics OR metabolomics OR '
+    'epigenetics OR "gene expression" OR chromatin OR '
+    # Sequencing methods
+    'single-cell OR RNA-seq OR scRNA-seq OR "ATAC-seq" OR '
+    '"ChIP-seq" OR "spatial transcriptomics" OR multi-omics OR '
+    # Functional genomics
+    'CRISPR OR "gene editing" OR knockout OR '
+    '"gene regulation" OR "transcription factor" OR '
+    # Disease & clinical
+    'cancer OR tumor OR disease OR mutation OR '
+    'immune OR inflammation OR therapy OR '
+    # Systems & development
+    'neuroscience OR "stem cell" OR development OR differentiation OR '
+    'organoid OR microbiome OR evolution OR '
+    # Metabolism
+    'metabolism OR metabolic OR mitochondria OR signaling'
 )
 
-# ── Helper: add NCBI key to any params dict ────────────────────
+# ── Helper: add NCBI key to params ────────────────────────────
 def ncbi_params(extra: dict) -> dict:
     p = {**extra}
     if NCBI_KEY:
@@ -48,10 +73,13 @@ def ncbi_params(extra: dict) -> dict:
     return p
 
 # ── 1. Fetch papers from PubMed ────────────────────────────────
-def fetch_papers(issn, journal_name, max_results=5):
-    query = f'{issn}[ISSN] AND ("{FROM}"[PDAT]:"{TODAY}"[PDAT]) AND ({BIO_TERMS})'
+def fetch_papers(issn, journal_name, max_results=5, use_bio_filter=True):
+    if use_bio_filter:
+        query = f'{issn}[ISSN] AND ("{FROM}"[PDAT]:"{TODAY}"[PDAT]) AND ({BIO_TERMS})'
+    else:
+        query = f'{issn}[ISSN] AND ("{FROM}"[PDAT]:"{TODAY}"[PDAT])'
 
-    # Search
+    # Search for IDs
     try:
         r = requests.get(
             'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi',
@@ -73,7 +101,7 @@ def fetch_papers(issn, journal_name, max_results=5):
     # Polite delay: 0.11s with key (10/sec), 0.4s without (3/sec)
     time.sleep(0.11 if NCBI_KEY else 0.4)
 
-    # Fetch abstracts
+    # Fetch abstracts as XML
     try:
         fetch_r = requests.get(
             'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi',
@@ -143,7 +171,6 @@ def fetch_papers(issn, journal_name, max_results=5):
 # ── 2. Summarise with Groq (free) ──────────────────────────────
 def summarise(abstract):
     if not GROQ_KEY:
-        # Fallback: first 22 words of abstract
         return ' '.join(abstract.split()[:22]) + '…'
     try:
         r = requests.post(
@@ -207,15 +234,26 @@ def main():
 
     all_papers = []
 
-    for journal, issn in JOURNALS.items():
-        print(f'Fetching {journal}...')
-        papers = fetch_papers(issn, journal)
+    # Broad journals — biology filter ON
+    for journal, issn in BROAD_JOURNALS.items():
+        print(f'Fetching {journal} (filtered)...')
+        papers = fetch_papers(issn, journal, max_results=5, use_bio_filter=True)
         print(f'  → {len(papers)} papers found')
-
         for p in papers:
             print(f'  Summarising: {p["title"][:55]}...')
             p['summary'] = summarise(p['abstract'])
-            del p['abstract']      # don't bloat the gist
+            del p['abstract']
+            all_papers.append(p)
+
+    # Specialist journals — biology filter OFF
+    for journal, issn in SPECIALIST_JOURNALS.items():
+        print(f'Fetching {journal} (all papers)...')
+        papers = fetch_papers(issn, journal, max_results=5, use_bio_filter=False)
+        print(f'  → {len(papers)} papers found')
+        for p in papers:
+            print(f'  Summarising: {p["title"][:55]}...')
+            p['summary'] = summarise(p['abstract'])
+            del p['abstract']
             all_papers.append(p)
 
     print(f'\n✅ Total: {len(all_papers)} papers across all journals')
