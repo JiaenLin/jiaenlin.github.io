@@ -552,5 +552,25 @@ function buildPaperButton() {
 
 chipsEl.prepend(buildPaperButton());
 </script>
+<div id="dbg" style="position:fixed;bottom:80px;left:0;right:0;background:rgba(0,0,0,0.85);
+color:#0f0;font-size:11px;font-family:monospace;padding:8px;z-index:99999;
+max-height:180px;overflow-y:auto;pointer-events:none"></div>
+<script>
+function dbg(msg) {
+  const el = document.getElementById('dbg');
+  el.innerHTML = new Date().toISOString().slice(11,19) + ' ' + msg + '<br>' + el.innerHTML;
+}
+const sb = document.getElementById('sendBtn');
+['pointerdown','pointerup','touchstart','touchend','click','mousedown'].forEach(evt => {
+  sb.addEventListener(evt, e => dbg('sendBtn: ' + evt + ' | disabled=' + sb.disabled));
+});
+
+const chips = document.getElementById('chips');
+['pointerdown','touchstart','click'].forEach(evt => {
+  chips.addEventListener(evt, e => dbg('chips: ' + evt + ' | target=' + (e.target.id || e.target.className)));
+});
+
+dbg('Debug loaded ✓');
+</script>
 </body>
 </html>
