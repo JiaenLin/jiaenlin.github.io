@@ -15,7 +15,7 @@ GROQ_KEY = os.environ.get('GROQ_KEY', '')
 NCBI_KEY = os.environ.get('NCBI_KEY', '')   # ← new
 
 TODAY = str(date.today())
-FROM  = str(date.today() - timedelta(days=3))
+FROM  = str(date.today() - timedelta(days=7))
 
 JOURNALS = {
     # Original
