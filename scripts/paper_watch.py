@@ -15,7 +15,7 @@ GROQ_KEY = os.environ.get('GROQ_KEY', '')
 NCBI_KEY = os.environ.get('NCBI_KEY', '')
 
 TODAY = str(date.today())
-FROM  = str(date.today() - timedelta(days=2))
+FROM  = str(date.today() - timedelta(days=3))
 
 # ── Broad journals: need biology keyword filter ────────────────
 BROAD_JOURNALS = {
