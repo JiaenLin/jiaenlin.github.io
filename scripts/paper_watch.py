@@ -45,23 +45,23 @@ SPECIALIST_JOURNALS = {
 # ── Biology filter — only for Nature & Science ────────────────
 BIO_TERMS = (
     # Molecular & cell biology
-    'biology OR cell OR molecular OR biochemistry OR '
+    'biology OR biochemistry OR '
     'genomics OR transcriptomics OR proteomics OR metabolomics OR '
     'epigenetics OR "gene expression" OR chromatin OR '
     # Sequencing methods
     'single-cell OR RNA-seq OR scRNA-seq OR "ATAC-seq" OR '
     '"ChIP-seq" OR "spatial transcriptomics" OR multi-omics OR '
     # Functional genomics
-    'CRISPR OR "gene editing" OR knockout OR '
+    'CRISPR OR "gene editing" OR '
     '"gene regulation" OR "transcription factor" OR '
     # Disease & clinical
-    'cancer OR tumor OR disease OR mutation OR '
+    'cancer OR tumor OR disease OR '
     'immune OR inflammation OR therapy OR '
     # Systems & development
     'neuroscience OR "stem cell" OR development OR differentiation OR '
-    'organoid OR microbiome OR evolution OR '
+    'organoid OR evolution OR '
     # Metabolism
-    'metabolism OR metabolic OR mitochondria OR signaling'
+    'metabolism OR metabolic OR mitochondria'
 )
 
 # ── Helper: add NCBI key to params ────────────────────────────
