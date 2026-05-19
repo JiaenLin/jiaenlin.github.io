@@ -31,6 +31,6 @@ jobs:
         run: python scripts/paper_watch.py
       - name: Refresh Cloudflare Worker cache
         run: |
-          curl -s "https://your-worker.workers.dev/refresh"
+          curl -s "https://jiaen-digital-twin.jiaenlin999.workers.dev/refresh"
       - name: Confirm output
         run: echo "Paper digest complete for $(date '+%Y-%m-%d')"
