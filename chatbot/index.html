@@ -54,7 +54,7 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 
 /* Suggestions */
 .chips{display:flex;flex-wrap:wrap;gap:8px;padding:10px 16px;border-top:1px solid var(--border);background:var(--surface)}
-.chip{padding:5px 12px;border-radius:99px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:.78rem;cursor:pointer;white-space:nowrap;transition:all 150ms}
+.chip{padding:5px 12px;border-radius:99px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:.78rem;cursor:pointer;white-space:nowrap;transition:all 150ms;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .chip:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-l)}
 
 /* Input */
@@ -62,13 +62,17 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 textarea{flex:1;min-height:40px;max-height:120px;resize:none;border:1px solid var(--border);border-radius:12px;padding:10px 14px;font-family:var(--font);font-size:.9rem;color:var(--text);background:var(--bg);outline:none;line-height:1.5;transition:border-color 150ms}
 textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px color-mix(in oklch,var(--primary) 15%,transparent)}
 textarea::placeholder{color:var(--faint)}
-.sendbtn{width:40px;height:40px;border-radius:10px;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background 150ms,transform 150ms}
+.sendbtn{width:40px;height:40px;border-radius:10px;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background 150ms,transform 150ms;
+  /* ✅ FIX 1b: mobile tap fixes */
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+}
 .sendbtn:hover{background:var(--primary-h)}
 .sendbtn:active{transform:scale(.93)}
 .sendbtn:disabled{opacity:.4;cursor:not-allowed;transform:none}
 
 @media(max-width:480px){.bubble{max-width:90%}.chips{flex-wrap:nowrap;overflow-x:auto}.chips::-webkit-scrollbar{display:none}}
-.micbtn{width:40px;height:40px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 150ms}
+.micbtn{width:40px;height:40px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 150ms;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .micbtn:hover{border-color:var(--primary);color:var(--primary)}
 .micbtn.listening{background:var(--primary);color:#fff;border-color:var(--primary);animation:mic-pulse 1s ease-in-out infinite}
 @keyframes mic-pulse{0%,100%{box-shadow:0 0 0 0 color-mix(in oklch,var(--primary) 40%,transparent)}50%{box-shadow:0 0 0 8px color-mix(in oklch,var(--primary) 0%,transparent)}}
@@ -119,7 +123,7 @@ textarea::placeholder{color:var(--faint)}
   <button class="micbtn" id="micBtn" type="button" aria-label="Voice input">
     <svg id="mic-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
   </button>
-  <button class="sendbtn" id="sendBtn" disabled aria-label="Send">
+  <button class="sendbtn" id="sendBtn" type="button" disabled aria-label="Send">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
   </button>
 </form>
@@ -131,58 +135,56 @@ const siteLang = urlParams.get('lang') || 'en';
 const isZh = siteLang.startsWith('zh');
 document.documentElement.lang = isZh ? 'zh-Hans' : 'en';
 
-// All UI strings in one place
 const I18N = {
   en: {
-    subtitle:       'Digital Twin · Computational Biologist',
-    welcome:        'Hi! I\'m Jiaen Lin\'s AI digital twin Jayce\uD83E\uDDEC Ask me about my research in single-cell RNA-seq, multi-omics, or anything about my work and collaborations!',
-    placeholder:    'Ask Jayce anything…',
-    listening:      'Listening…',
-    micTitle:       'Speak your question',
-    micStop:        'Listening… click to stop',
-    micError:       'Mic error — try again',
-    connError:      'Connection error — please try again.',
-    userAvatar:     'You',
+    subtitle:    'Digital Twin · Computational Biologist',
+    welcome:     'Hi! I\'m Jiaen Lin\'s AI digital twin Jayce\uD83E\uDDEC Ask me about my research in single-cell RNA-seq, multi-omics, or anything about my work and collaborations!',
+    placeholder: 'Ask Jayce anything…',
+    listening:   'Listening…',
+    micTitle:    'Speak your question',
+    micStop:     'Listening… click to stop',
+    micError:    'Mic error — try again',
+    connError:   'Connection error — please try again.',
+    userAvatar:  'You',
     chips: [
-      { label: 'Current research',  prompt: 'What is your current research focus?' },
-      { label: 'Tech stack',        prompt: 'What programming tools do you use?' },
-      { label: 'Collaborations',    prompt: 'Are you open to collaborations?' },
-      { label: 'Multi-omics',       prompt: 'How do you integrate multi-omics data?' },
+      { label: 'Current research', prompt: 'What is your current research focus?' },
+      { label: 'Tech stack',       prompt: 'What programming tools do you use?' },
+      { label: 'Collaborations',   prompt: 'Are you open to collaborations?' },
+      { label: 'Multi-omics',      prompt: 'How do you integrate multi-omics data?' },
     ],
   },
   zh: {
-    subtitle:       'AI分身 · 计算生物学家',
-    welcome:        '你好！我是林佳恩的AI数字分身Jayce🧬 你可以问我关于单细胞RNA测序、多组学研究，或任何关于我的工作与合作的问题！',
-    placeholder:    '问Jayce任何问题…',
-    listening:      '正在聆听…',
-    micTitle:       '语音提问',
-    micStop:        '正在聆听… 点击停止',
-    micError:       '麦克风错误，请重试',
-    connError:      '连接失败，请重试。',
-    userAvatar:     '你',
+    subtitle:    'AI分身 · 计算生物学家',
+    welcome:     '你好！我是林佳恩的AI数字分身Jayce🧬 你可以问我关于单细胞RNA测序、多组学研究，或任何关于我的工作与合作的问题！',
+    placeholder: '问Jayce任何问题…',
+    listening:   '正在聆听…',
+    micTitle:    '语音提问',
+    micStop:     '正在聆听… 点击停止',
+    micError:    '麦克风错误，请重试',
+    connError:   '连接失败，请重试。',
+    userAvatar:  '你',
     chips: [
-      { label: '当前研究方向',  prompt: '你目前的研究重点是什么？' },
+      { label: '当前研究方向', prompt: '你目前的研究重点是什么？' },
       { label: '技术',       prompt: '你使用哪些编程工具？' },
-      { label: '合作机会',     prompt: '你是否开放科研合作？' },
-      { label: '多组学整合',   prompt: '你如何整合多组学数据？' },
+      { label: '合作机会',   prompt: '你是否开放科研合作？' },
+      { label: '多组学整合', prompt: '你如何整合多组学数据？' },
     ],
   },
 };
 
 const T = isZh ? I18N.zh : I18N.en;
 
-// Apply static strings on load
 document.getElementById('header-subtitle').textContent = T.subtitle;
 document.getElementById('welcome-bubble').textContent  = T.welcome;
 document.getElementById('input').placeholder           = T.placeholder;
 document.getElementById('micBtn').title                = T.micTitle;
 
-// Render chips
 const chipsEl = document.getElementById('chips');
 T.chips.forEach(({ label, prompt }) => {
   const btn = document.createElement('button');
-  btn.className  = 'chip';
-  btn.dataset.p  = prompt;
+  btn.className   = 'chip';
+  btn.type        = 'button';
+  btn.dataset.p   = prompt;
   btn.textContent = label;
   chipsEl.appendChild(btn);
 });
@@ -239,12 +241,15 @@ document.getElementById("clearBtn").onclick = () => {
   chipsEl.style.display = "flex";
 };
 
-// ── Textarea auto-resize ─────────────────────────────────────────
-input.addEventListener("input", () => {
+// ── Textarea auto-resize  ✅ FIX 1: compositionend + multiple events ──
+function updateInput() {
   input.style.height = "auto";
   input.style.height = Math.min(input.scrollHeight, 120) + "px";
   sendBtn.disabled = !input.value.trim() || streaming;
-});
+}
+["input", "keyup", "compositionend", "change"].forEach(evt =>
+  input.addEventListener(evt, updateInput)
+);
 
 input.addEventListener("keydown", e => {
   if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (!sendBtn.disabled) send(); }
@@ -252,13 +257,20 @@ input.addEventListener("keydown", e => {
 
 document.getElementById("form").addEventListener("submit", () => { if (!sendBtn.disabled) send(); });
 
+// ✅ FIX 1c: sendBtn touchend for mobile
+sendBtn.addEventListener("click", () => { if (!sendBtn.disabled) send(); });
+sendBtn.addEventListener("touchend", e => {
+  e.preventDefault();
+  if (!sendBtn.disabled) send();
+});
+
 // ── Chips ────────────────────────────────────────────────────────
 chipsEl.addEventListener("click", e => {
   const c = e.target.closest(".chip");
   if (!c || streaming) return;
   if (c.id === 'paper-chip') return;
   input.value = c.dataset.p;
-  input.dispatchEvent(new Event("input"));
+  updateInput();
   send();
 });
 
@@ -406,7 +418,7 @@ const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecogni
 if (!SpeechRecognition) {
   micBtn.style.display = "none";
 } else {
-  const recognition   = new SpeechRecognition();
+  const recognition        = new SpeechRecognition();
   recognition.continuous    = false;
   recognition.interimResults = true;
   recognition.lang          = isZh ? "zh-CN" : "en-US";
@@ -420,8 +432,8 @@ if (!SpeechRecognition) {
   recognition.onstart = () => {
     isListening = true;
     micBtn.classList.add("listening");
-    micBtn.title         = T.micStop;
-    input.placeholder    = T.listening;
+    micBtn.title      = T.micStop;
+    input.placeholder = T.listening;
   };
 
   recognition.onresult = (e) => {
@@ -446,6 +458,7 @@ if (!SpeechRecognition) {
     }
   };
 }
+
 // ══════════════════════════════════════════════
 // TODAY'S PAPERS BUTTON
 // ══════════════════════════════════════════════
@@ -455,6 +468,7 @@ function buildPaperButton() {
   const btn = document.createElement('button');
   btn.className   = 'chip';
   btn.id          = 'paper-chip';
+  btn.type        = 'button';
   btn.textContent = isZh ? '📄 今日论文' : '📄 Today\'s Papers';
   btn.style.cssText = [
     'border-color:var(--primary)',
@@ -463,10 +477,10 @@ function buildPaperButton() {
     'flex-shrink:0',
   ].join(';');
 
-  btn.addEventListener('click', async () => {
+  // ✅ FIX 2: extract handler + add touchend for mobile Quark
+  async function handlePaperClick() {
     if (streaming) return;
 
-    // Hide chips, show loading
     chipsEl.style.display = 'none';
     const loadRow = makeRow('assistant');
     loadRow.querySelector('.bubble').textContent =
@@ -475,53 +489,41 @@ function buildPaperButton() {
     scroll();
 
     try {
-      const data = await fetch(`${WORKER_BASE}/papers`)
-        .then(r => r.json());
+      const data = await fetch(`${WORKER_BASE}/papers`).then(r => r.json());
 
-      // Not ready yet
       if (!data.ready) {
         loadRow.querySelector('.bubble').innerHTML =
           `<span style="color:var(--muted)">${data.message}</span>`;
         return;
       }
 
-      // Group by journal
       const byJournal = {};
       data.papers.forEach(p => {
         if (!byJournal[p.journal]) byJournal[p.journal] = [];
         byJournal[p.journal].push(p);
       });
 
-      // Header
       const header = isZh
         ? `📚 <b>今日论文 — ${data.date}</b>（共 ${data.count} 篇）<br><br>`
         : `📚 <b>Today's Papers — ${data.date}</b> &nbsp;(${data.count} papers)<br><br>`;
 
-      // Body — one section per journal
       const body = Object.entries(byJournal).map(([journal, papers]) => {
         const items = papers.map(p => `
           <div style="margin-bottom:10px">
             <a href="${p.url}" target="_blank" rel="noopener"
-               style="font-weight:600;color:var(--text);
-                      font-size:.87rem;line-height:1.4;display:block">
+               style="font-weight:600;color:var(--text);font-size:.87rem;line-height:1.4;display:block">
               ${p.title}
             </a>
-            <div style="font-size:.74rem;color:var(--muted);margin:2px 0">
-              ${p.authors}
-            </div>
-            <div style="font-size:.82rem;color:var(--text);font-style:italic">
-              💡 ${p.summary}
-            </div>
+            <div style="font-size:.74rem;color:var(--muted);margin:2px 0">${p.authors}</div>
+            <div style="font-size:.82rem;color:var(--text);font-style:italic">💡 ${p.summary}</div>
           </div>
         `).join('');
 
         return `
           <div style="margin-bottom:14px">
-            <div style="font-size:.72rem;font-weight:700;
-                        text-transform:uppercase;letter-spacing:.07em;
-                        color:var(--primary);margin-bottom:6px;
-                        padding-bottom:4px;
-                        border-bottom:1px solid var(--border)">
+            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;
+                        letter-spacing:.07em;color:var(--primary);margin-bottom:6px;
+                        padding-bottom:4px;border-bottom:1px solid var(--border)">
               ${journal}
             </div>
             ${items}
@@ -535,20 +537,19 @@ function buildPaperButton() {
     } catch (err) {
       loadRow.querySelector('.bubble').innerHTML =
         `<span style="color:var(--muted)">
-          ${isZh
-            ? '无法加载论文，请稍后重试。'
-            : 'Could not load papers — try again later.'}
+          ${isZh ? '无法加载论文，请稍后重试。' : 'Could not load papers — try again later.'}
         </span>`;
     }
-  });
+  }
+
+  btn.addEventListener('click', handlePaperClick);
+  btn.addEventListener('touchend', e => { e.preventDefault(); handlePaperClick(); }); // ✅ FIX 2
 
   return btn;
 }
 
-// Prepend to chips so it's always first
 chipsEl.prepend(buildPaperButton());
 
-// Re-add after clear chat (clearBtn resets chips display)
 document.getElementById('clearBtn').addEventListener('click', () => {
   if (!document.getElementById('paper-chip')) {
     chipsEl.prepend(buildPaperButton());
