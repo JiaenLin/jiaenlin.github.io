@@ -23,7 +23,7 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 .id-text p{font-size:0.78rem;color:var(--muted)}
 .dot{display:inline-block;width:7px;height:7px;background:#22c55e;border-radius:50%;margin-right:4px;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.hbtn{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.hbtn{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .hbtn:hover{background:var(--surface2);color:var(--text)}
 
 /* Messages */
@@ -54,7 +54,7 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 
 /* Suggestions */
 .chips{display:flex;flex-wrap:wrap;gap:8px;padding:10px 16px;border-top:1px solid var(--border);background:var(--surface)}
-.chip{padding:5px 12px;border-radius:99px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:.78rem;cursor:pointer;white-space:nowrap;transition:all 150ms;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.chip{padding:5px 12px;border-radius:99px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:.78rem;cursor:pointer;white-space:nowrap;transition:all 150ms;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
 .chip:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-l)}
 
 /* Input */
@@ -62,17 +62,13 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 textarea{flex:1;min-height:40px;max-height:120px;resize:none;border:1px solid var(--border);border-radius:12px;padding:10px 14px;font-family:var(--font);font-size:.9rem;color:var(--text);background:var(--bg);outline:none;line-height:1.5;transition:border-color 150ms}
 textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px color-mix(in oklch,var(--primary) 15%,transparent)}
 textarea::placeholder{color:var(--faint)}
-.sendbtn{width:40px;height:40px;border-radius:10px;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background 150ms,transform 150ms;
-  /* ✅ FIX 1b: mobile tap fixes */
-  touch-action:manipulation;
-  -webkit-tap-highlight-color:transparent;
-}
+.sendbtn{width:40px;height:40px;border-radius:10px;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background 150ms,transform 150ms;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
 .sendbtn:hover{background:var(--primary-h)}
 .sendbtn:active{transform:scale(.93)}
 .sendbtn:disabled{opacity:.4;cursor:not-allowed;transform:none}
 
 @media(max-width:480px){.bubble{max-width:90%}.chips{flex-wrap:nowrap;overflow-x:auto}.chips::-webkit-scrollbar{display:none}}
-.micbtn{width:40px;height:40px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 150ms;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.micbtn{width:40px;height:40px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 150ms;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
 .micbtn:hover{border-color:var(--primary);color:var(--primary)}
 .micbtn.listening{background:var(--primary);color:#fff;border-color:var(--primary);animation:mic-pulse 1s ease-in-out infinite}
 @keyframes mic-pulse{0%,100%{box-shadow:0 0 0 0 color-mix(in oklch,var(--primary) 40%,transparent)}50%{box-shadow:0 0 0 8px color-mix(in oklch,var(--primary) 0%,transparent)}}
@@ -89,16 +85,16 @@ textarea::placeholder{color:var(--faint)}
     </div>
   </div>
   <div style="display:flex;gap:6px">
-    <button class="hbtn" id="themeBtn" title="Toggle dark mode">
+    <button class="hbtn" id="themeBtn" title="Toggle dark mode" type="button">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
     </button>
-    <button class="hbtn" id="muteBtn" title="Toggle voice output">
+    <button class="hbtn" id="muteBtn" title="Toggle voice output" type="button">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
         <line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>
       </svg>
     </button>
-    <button class="hbtn" id="clearBtn" title="Clear chat">
+    <button class="hbtn" id="clearBtn" title="Clear chat" type="button">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.36"/></svg>
     </button>
   </div>
@@ -165,9 +161,9 @@ const I18N = {
     userAvatar:  '你',
     chips: [
       { label: '当前研究方向', prompt: '你目前的研究重点是什么？' },
-      { label: '技术',       prompt: '你使用哪些编程工具？' },
-      { label: '合作机会',   prompt: '你是否开放科研合作？' },
-      { label: '多组学整合', prompt: '你如何整合多组学数据？' },
+      { label: '技术',        prompt: '你使用哪些编程工具？' },
+      { label: '合作机会',    prompt: '你是否开放科研合作？' },
+      { label: '多组学整合',  prompt: '你如何整合多组学数据？' },
     ],
   },
 };
@@ -205,10 +201,14 @@ function getVisitorId() {
   return id;
 }
 
-// ── Theme toggle ─────────────────────────────────────────────────
-let dark = matchMedia("(prefers-color-scheme:dark)").matches;
+// ── Theme — default light ────────────────────────────────────────
+let dark = false;
 setTheme(dark);
-document.getElementById("themeBtn").onclick = () => { dark = !dark; setTheme(dark); };
+document.getElementById("themeBtn").addEventListener("pointerdown", e => {
+  e.preventDefault();
+  dark = !dark;
+  setTheme(dark);
+});
 
 function setTheme(d) {
   document.documentElement.setAttribute("data-theme", d ? "dark" : "light");
@@ -219,7 +219,8 @@ function setTheme(d) {
 
 // ── Voice output toggle ──────────────────────────────────────────
 let voiceEnabled = false;
-document.getElementById("muteBtn").onclick = () => {
+document.getElementById("muteBtn").addEventListener("pointerdown", e => {
+  e.preventDefault();
   voiceEnabled = !voiceEnabled;
   window.speechSynthesis.cancel();
   document.getElementById("muteBtn").innerHTML = voiceEnabled
@@ -231,17 +232,19 @@ document.getElementById("muteBtn").onclick = () => {
         <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
         <line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>
        </svg>`;
-};
+});
 
 // ── Clear chat ───────────────────────────────────────────────────
-document.getElementById("clearBtn").onclick = () => {
+document.getElementById("clearBtn").addEventListener("pointerdown", e => {
+  e.preventDefault();
   history = [];
   window.speechSynthesis.cancel();
   [...msgs.querySelectorAll(".row")].slice(1).forEach(r => r.remove());
   chipsEl.style.display = "flex";
-};
+  if (!document.getElementById('paper-chip')) chipsEl.prepend(buildPaperButton());
+});
 
-// ── Textarea auto-resize  ✅ FIX 1: compositionend + multiple events ──
+// ── Textarea auto-resize + enable send button ────────────────────
 function updateInput() {
   input.style.height = "auto";
   input.style.height = Math.min(input.scrollHeight, 120) + "px";
@@ -255,20 +258,18 @@ input.addEventListener("keydown", e => {
   if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (!sendBtn.disabled) send(); }
 });
 
-document.getElementById("form").addEventListener("submit", () => { if (!sendBtn.disabled) send(); });
-
-// ✅ FIX 1c: sendBtn touchend for mobile
-sendBtn.addEventListener("click", () => { if (!sendBtn.disabled) send(); });
-sendBtn.addEventListener("touchend", e => {
+// ── Send button — pointerdown for Quark mobile ───────────────────
+sendBtn.addEventListener("pointerdown", e => {
   e.preventDefault();
   if (!sendBtn.disabled) send();
 });
 
-// ── Chips ────────────────────────────────────────────────────────
-chipsEl.addEventListener("click", e => {
+// ── Chips — pointerdown delegate ────────────────────────────────
+chipsEl.addEventListener("pointerdown", e => {
   const c = e.target.closest(".chip");
   if (!c || streaming) return;
   if (c.id === 'paper-chip') return;
+  e.preventDefault();
   input.value = c.dataset.p;
   updateInput();
   send();
@@ -362,17 +363,17 @@ function speak(text) {
     .replace(/#+\s/g, '')
     .replace(/<[^>]+>/g, '')
     .trim();
-  const utter   = new SpeechSynthesisUtterance(plain.slice(0, 500));
-  utter.lang    = isZh ? 'zh-CN' : 'en-US';
-  utter.rate    = 1.4;
-  utter.pitch   = 1;
+  const utter = new SpeechSynthesisUtterance(plain.slice(0, 500));
+  utter.lang  = isZh ? 'zh-CN' : 'en-US';
+  utter.rate  = 1.4;
+  utter.pitch = 1;
 
   function assignVoiceAndSpeak() {
     const voices = window.speechSynthesis.getVoices();
     if (voices.length === 0) { setTimeout(assignVoiceAndSpeak, 100); return; }
     const zhMalePriority = ['zhiwei','yunjian','yunyang','yunxi','kangkang'];
     const enMalePriority = ['male','alex','daniel','mark','david'];
-    const priority = isZh ? zhMalePriority : enMalePriority;
+    const priority   = isZh ? zhMalePriority : enMalePriority;
     const langVoices = voices.filter(v => v.lang.startsWith(isZh ? 'zh' : 'en'));
     let maleVoice = null, bestRank = -1;
     for (const v of langVoices) {
@@ -424,7 +425,8 @@ if (!SpeechRecognition) {
   recognition.lang          = isZh ? "zh-CN" : "en-US";
   let isListening = false;
 
-  micBtn.addEventListener("click", () => {
+  micBtn.addEventListener("pointerdown", e => {
+    e.preventDefault();
     if (isListening) recognition.stop();
     else recognition.start();
   });
@@ -477,10 +479,8 @@ function buildPaperButton() {
     'flex-shrink:0',
   ].join(';');
 
-  // ✅ FIX 2: extract handler + add touchend for mobile Quark
   async function handlePaperClick() {
     if (streaming) return;
-
     chipsEl.style.display = 'none';
     const loadRow = makeRow('assistant');
     loadRow.querySelector('.bubble').textContent =
@@ -518,7 +518,6 @@ function buildPaperButton() {
             <div style="font-size:.82rem;color:var(--text);font-style:italic">💡 ${p.summary}</div>
           </div>
         `).join('');
-
         return `
           <div style="margin-bottom:14px">
             <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;
@@ -542,19 +541,16 @@ function buildPaperButton() {
     }
   }
 
-  btn.addEventListener('click', handlePaperClick);
-  btn.addEventListener('touchend', e => { e.preventDefault(); handlePaperClick(); }); // ✅ FIX 2
+  // ✅ pointerdown for Quark mobile
+  btn.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    handlePaperClick();
+  });
 
   return btn;
 }
 
 chipsEl.prepend(buildPaperButton());
-
-document.getElementById('clearBtn').addEventListener('click', () => {
-  if (!document.getElementById('paper-chip')) {
-    chipsEl.prepend(buildPaperButton());
-  }
-});
 </script>
 </body>
 </html>
