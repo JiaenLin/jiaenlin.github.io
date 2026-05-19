@@ -946,6 +946,7 @@ function setLang(lang) {
       var f = document.createElement('iframe');
       f.src = 'https://jiaenlin.github.io/chatbot/index.html?lang=' + currentLang;
       f.title = 'Chat with Jiaen Lin';
+      f.allow = "autoplay; microphone; speaker-selection"; 
       panel.appendChild(f);
       loaded = true;
     }
