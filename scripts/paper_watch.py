@@ -156,7 +156,7 @@ def fetch_papers(journal_ta, journal_name, max_results=5, use_bio_filter=True):
             if not title or not abstract:
                 continue
             if not is_biology(title, abstract):
-                 print(f'  ⚠️ Filtered out: {title[:50]}')
+                print(f'  ⚠️ Filtered out: {title[:50]}')
                 continue
             authors = article.findall('.//Author')
             names   = []
