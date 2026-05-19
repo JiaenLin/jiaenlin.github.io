@@ -19,28 +19,27 @@ FROM  = str(date.today() - timedelta(days=3))
 
 # ── Broad journals: need biology keyword filter ────────────────
 BROAD_JOURNALS = {
-    'Nature':   '0028-0836',
-    'Science':  '0036-8075',
-    'Nature Computational Science':'2662-8457',    
+    'Nature':                       'Nature',
+    'Science':                      'Science',
+    'Nature Computational Science': 'Nat Comput Sci',
+    'Nature Machine Intelligence':  'Nat Mach Intell',  
 }
 
 # ── Specialist biology journals: fetch all papers ──────────────
 SPECIALIST_JOURNALS = {
-    'Cell':                  '0092-8674',
-    'Nature Methods':        '1548-7091',
-    'Nature Biotechnology':  '1087-0156',
-    'Cell Metabolism':       '1550-4131',
-    'Nature Metabolism':     '2522-5812',
-    'Cell Stem Cell':        '1934-5909',
-    'Nature Cell Biology':   '1465-7392',
-    'Nature Neuroscience':   '1097-6256',
-    'Nature Genetics':       '1061-4036',  
-    'Nature Medicine':       '1078-8956',  
-    'Circulation':            '0009-7322',
-    'Neuron':                 '0896-6273',
-    'Cancer Cell':            '1535-6108',
-    'Nature Machine Intelligence':   '2522-5839',
-    
+    'Cell':                  'Cell',
+    'Nature Methods':        'Nat Methods',
+    'Nature Biotechnology':  'Nat Biotechnol',
+    'Cell Metabolism':       'Cell Metab',
+    'Nature Metabolism':     'Nat Metab',
+    'Cell Stem Cell':        'Cell Stem Cell',
+    'Nature Cell Biology':   'Nat Cell Biol',
+    'Nature Neuroscience':   'Nat Neurosci',
+    'Nature Genetics':       'Nat Genet',
+    'Nature Medicine':       'Nat Med',
+    'Circulation':           'Circulation',
+    'Neuron':                'Neuron',
+    'Cancer Cell':           'Cancer Cell',  
 }
 
 # ── Biology filter — only for Nature & Science ────────────────
@@ -73,11 +72,11 @@ def ncbi_params(extra: dict) -> dict:
     return p
 
 # ── 1. Fetch papers from PubMed ────────────────────────────────
-def fetch_papers(issn, journal_name, max_results=5, use_bio_filter=True):
+def fetch_papers(journal_ta, journal_name, max_results=5, use_bio_filter=True):
     if use_bio_filter:
-        query = f'{issn}[ISSN] AND ("{FROM}"[PDAT]:"{TODAY}"[PDAT]) AND ({BIO_TERMS})'
+        query = f'{journal_ta}[TA] AND ("{FROM}"[PDAT]:"{TODAY}"[PDAT]) AND ({BIO_TERMS})'
     else:
-        query = f'{issn}[ISSN] AND ("{FROM}"[PDAT]:"{TODAY}"[PDAT])'
+        query = f'{journal_ta}[TA] AND ("{FROM}"[PDAT]:"{TODAY}"[PDAT])'
 
     # Search for IDs
     try:
@@ -235,9 +234,9 @@ def main():
     all_papers = []
 
     # Broad journals — biology filter ON
-    for journal, issn in BROAD_JOURNALS.items():
-        print(f'Fetching {journal} (filtered)...')
-        papers = fetch_papers(issn, journal, max_results=5, use_bio_filter=True)
+    for journal_name, journal_ta  in BROAD_JOURNALS.items():
+        print(f'Fetching {journal_name} (filtered)...')
+        papers = fetch_papers(journal_ta, journal_name, max_results=5, use_bio_filter=True)
         print(f'  → {len(papers)} papers found')
         for p in papers:
             print(f'  Summarising: {p["title"][:55]}...')
@@ -246,9 +245,9 @@ def main():
             all_papers.append(p)
 
     # Specialist journals — biology filter OFF
-    for journal, issn in SPECIALIST_JOURNALS.items():
-        print(f'Fetching {journal} (all papers)...')
-        papers = fetch_papers(issn, journal, max_results=5, use_bio_filter=False)
+    for journal_name, journal_ta in SPECIALIST_JOURNALS.items():
+        print(f'Fetching {journal_name} (all papers)...')
+        papers = fetch_papers(journal_ta, journal_name, max_results=5, use_bio_filter=False)
         print(f'  → {len(papers)} papers found')
         for p in papers:
             print(f'  Summarising: {p["title"][:55]}...')
