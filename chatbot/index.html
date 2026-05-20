@@ -89,16 +89,16 @@ textarea::placeholder{color:var(--faint)}
     </div>
   </div>
   <div style="display:flex;gap:6px">
-    <button class="hbtn" id="themeBtn" title="Toggle dark mode" type="button">
+    <button class="hbtn" id="themeBtn" onclick="toggleTheme()" title="Toggle dark mode" type="button">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
     </button>
-    <button class="hbtn" id="muteBtn" title="Toggle voice output" type="button">
+    <button class="hbtn" id="muteBtn" onclick="toggleMute()" title="Toggle voice output" type="button">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
         <line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>
       </svg>
     </button>
-    <button class="hbtn" id="clearBtn" title="Clear chat" type="button">
+    <button class="hbtn" id="clearBtn" onclick="clearChat()" title="Clear chat" type="button">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.36"/></svg>
     </button>
   </div>
@@ -120,10 +120,10 @@ textarea::placeholder{color:var(--faint)}
 
 <form class="inputbar" id="form" onsubmit="return false">
   <textarea id="input" rows="1" aria-label="Message"></textarea>
-  <button class="micbtn" id="micBtn" type="button" aria-label="Voice input">
+  <button class="micbtn" id="micBtn" onclick="toggleMic()" type="button" aria-label="Voice input">
     <svg id="mic-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
   </button>
-  <button class="sendbtn" id="sendBtn" type="button" aria-label="Send">
+  <button class="sendbtn" id="sendBtn" onclick="send()" type="button" aria-label="Send">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
   </button>
 </form>
@@ -189,8 +189,13 @@ T.chips.forEach(({ label, prompt }) => {
   const btn = document.createElement('button');
   btn.className   = 'chip';
   btn.type        = 'button';
-  btn.dataset.p   = prompt;
   btn.textContent = label;
+  btn.onclick = function() {
+    if (streaming) return;
+    input.value = prompt;
+    updateInput();
+    send();
+  };
   chipsEl.appendChild(btn);
 });
 
@@ -225,16 +230,7 @@ function getVisitorId() {
 // ── Theme — default light ────────────────────────────────────────
 let dark = false;
 setTheme(dark);
-let _themeTouchHandled = false;
-document.getElementById("themeBtn").addEventListener("touchend", e => {
-  e.preventDefault(); _themeTouchHandled = true;
-  dark = !dark; setTheme(dark);
-  setTimeout(() => { _themeTouchHandled = false; }, 600);
-}, { passive: false });
-document.getElementById("themeBtn").addEventListener("pointerdown", e => {
-  if (_themeTouchHandled) return;
-  e.preventDefault(); dark = !dark; setTheme(dark);
-});
+function toggleTheme() { dark = !dark; setTheme(dark); }
 
 function setTheme(d) {
   document.documentElement.setAttribute("data-theme", d ? "dark" : "light");
@@ -270,16 +266,6 @@ function toggleMute() {
         <line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>
        </svg>`;
 }
-let _muteTouchHandled = false;
-document.getElementById("muteBtn").addEventListener("touchend", e => {
-  e.preventDefault(); _muteTouchHandled = true;
-  toggleMute();
-  setTimeout(() => { _muteTouchHandled = false; }, 600);
-}, { passive: false });
-document.getElementById("muteBtn").addEventListener("pointerdown", e => {
-  if (_muteTouchHandled) return;
-  e.preventDefault(); toggleMute();
-});
 
 // ── Clear chat ───────────────────────────────────────────────────
 function clearChat() {
@@ -289,16 +275,6 @@ function clearChat() {
   chipsEl.style.display = "flex";
   if (!document.getElementById('paper-chip')) chipsEl.prepend(buildPaperButton());
 }
-let _clearTouchHandled = false;
-document.getElementById("clearBtn").addEventListener("touchend", e => {
-  e.preventDefault(); _clearTouchHandled = true;
-  clearChat();
-  setTimeout(() => { _clearTouchHandled = false; }, 600);
-}, { passive: false });
-document.getElementById("clearBtn").addEventListener("pointerdown", e => {
-  if (_clearTouchHandled) return;
-  e.preventDefault(); clearChat();
-});
 
 // ── Textarea auto-resize + enable send button ────────────────────
 function updateInput() {
@@ -336,30 +312,7 @@ input.addEventListener("keydown", e => {
   if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
 });
 
-// ── Send button — touchend + pointerdown for Quark mobile ────────
-let _sendTouchHandled = false;
-sendBtn.addEventListener("touchend", e => {
-  e.preventDefault();
-  _sendTouchHandled = true;
-  send();
-  setTimeout(() => { _sendTouchHandled = false; }, 600);
-}, { passive: false });
-sendBtn.addEventListener("pointerdown", e => {
-  if (_sendTouchHandled) return;
-  e.preventDefault();
-  send();
-});
 
-// ── Chips — pointerdown delegate ────────────────────────────────
-chipsEl.addEventListener("pointerdown", e => {
-  const c = e.target.closest(".chip");
-  if (!c || streaming) return;
-  if (c.id === 'paper-chip') return;
-  e.preventDefault();
-  input.value = c.dataset.p;
-  updateInput();
-  send();
-});
 
 // ── Send ─────────────────────────────────────────────────────────
 async function send() {
@@ -516,21 +469,15 @@ function esc(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>
 // ── Voice input ──────────────────────────────────────────────────
 const micBtn = document.getElementById("micBtn");
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null, isListening = false;
 
 if (!SpeechRecognition) {
   micBtn.style.display = "none";
 } else {
-  const recognition        = new SpeechRecognition();
-  recognition.continuous    = false;
+  recognition                = new SpeechRecognition();
+  recognition.continuous     = false;
   recognition.interimResults = true;
-  recognition.lang          = isZh ? "zh-CN" : "en-US";
-  let isListening = false;
-
-  micBtn.addEventListener("pointerdown", e => {
-    e.preventDefault();
-    if (isListening) recognition.stop();
-    else recognition.start();
-  });
+  recognition.lang           = isZh ? "zh-CN" : "en-US";
 
   recognition.onstart = () => {
     isListening = true;
@@ -560,6 +507,11 @@ if (!SpeechRecognition) {
       setTimeout(() => input.placeholder = T.placeholder, 2000);
     }
   };
+}
+
+function toggleMic() {
+  if (!recognition) return;
+  if (isListening) recognition.stop(); else recognition.start();
 }
 
 // ══════════════════════════════════════════════
@@ -642,11 +594,7 @@ function buildPaperButton() {
     }
   }
 
-  // ✅ pointerdown for Quark mobile
-  btn.addEventListener('pointerdown', e => {
-    e.preventDefault();
-    handlePaperClick();
-  });
+  btn.onclick = function() { handlePaperClick(); };
 
   return btn;
 }
