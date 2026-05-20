@@ -270,9 +270,11 @@ def trend_analysis(papers):
                 'messages': [{
                     'role':    'system',
                     'content': (
-                        'Return exactly 3 distinct, non-overlapping keywords that '
-                        'capture the dominant research themes across these papers. '
-                        'Output only the 3 keywords separated by " · ". No explanation, no punctuation, nothing else.'
+                        'Return exactly 3 specific biological topics that appear most across these papers. '
+                        'Use precise terms: specific pathways (e.g. Wnt signaling), diseases (e.g. Alzheimer\'s disease), '
+                        'molecules (e.g. p53), or mechanisms (e.g. mitochondrial fission). '
+                        'Never use broad fields like "gene expression", "cellular biology", or "AI". '
+                        'Output only the 3 terms separated by " · ". No explanation, no punctuation, nothing else.'
                     )
                 }, {
                     'role':    'user',
