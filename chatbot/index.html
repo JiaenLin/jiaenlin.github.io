@@ -577,31 +577,86 @@ function buildPaperButton() {
         ? `📚 <b>今日论文 — ${data.date}</b>（共 ${data.count} 篇）<br><br>`
         : `📚 <b>Today's Papers — ${data.date}</b> &nbsp;(${data.count} papers)<br><br>`;
 
-      const body = Object.entries(byJournal).map(([journal, papers]) => {
-        const items = papers.map(p => `
-          <div style="margin-bottom:10px">
+      const bubble = loadRow.querySelector('.bubble');
+      bubble.innerHTML = header;
+
+      // Expand all / Collapse all
+      const toggleAllWrap = document.createElement('div');
+      toggleAllWrap.style.cssText = 'font-size:.75rem;margin-bottom:10px';
+      let allExpanded = false;
+      const sectionBodies = [], sectionArrows = [];
+      const toggleAllA = document.createElement('a');
+      toggleAllA.href = 'javascript:void(0)';
+      toggleAllA.style.cssText = 'color:var(--primary);text-decoration:none';
+      toggleAllA.textContent = isZh ? '展开全部' : 'Expand all';
+      toggleAllA.onclick = function() {
+        allExpanded = !allExpanded;
+        sectionBodies.forEach(b => b.style.display = allExpanded ? 'block' : 'none');
+        sectionArrows.forEach(a => a.textContent = allExpanded ? '▼' : '▶');
+        toggleAllA.textContent = allExpanded
+          ? (isZh ? '收起全部' : 'Collapse all')
+          : (isZh ? '展开全部' : 'Expand all');
+      };
+      toggleAllWrap.appendChild(toggleAllA);
+      bubble.appendChild(toggleAllWrap);
+
+      // Accordion sections per journal
+      Object.entries(byJournal).forEach(([journal, papers]) => {
+        const hdr = document.createElement('div');
+        hdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;' +
+          'cursor:pointer;padding:6px 0;border-top:1px solid var(--border);' +
+          'user-select:none;-webkit-user-select:none';
+
+        const left = document.createElement('div');
+        left.style.cssText = 'display:flex;align-items:center;gap:6px';
+
+        const arrow = document.createElement('span');
+        arrow.textContent = '▶';
+        arrow.style.cssText = 'font-size:.7rem;color:var(--primary)';
+        sectionArrows.push(arrow);
+
+        const nameEl = document.createElement('span');
+        nameEl.textContent = journal.toUpperCase();
+        nameEl.style.cssText = 'font-size:.72rem;font-weight:700;letter-spacing:.07em;color:var(--primary)';
+        left.appendChild(arrow);
+        left.appendChild(nameEl);
+
+        const countEl = document.createElement('span');
+        countEl.textContent = papers.length;
+        countEl.style.cssText = 'font-size:.72rem;color:var(--muted)';
+
+        hdr.appendChild(left);
+        hdr.appendChild(countEl);
+
+        const secBody = document.createElement('div');
+        secBody.style.display = 'none';
+        sectionBodies.push(secBody);
+
+        papers.forEach(p => {
+          const item = document.createElement('div');
+          item.style.cssText = 'margin:8px 0 10px 14px';
+          item.innerHTML = `
             <a href="${p.url}" target="_blank" rel="noopener"
-               style="font-weight:600;color:var(--text);font-size:.87rem;line-height:1.4;display:block">
+               style="font-weight:600;color:var(--text);font-size:.87rem;line-height:1.4;display:block;text-decoration:none">
               ${p.title}
             </a>
-            <div style="font-size:.74rem;color:var(--muted);margin:2px 0">${p.authors}${p.pub_date ? ` · ${p.pub_date}` : ''}</div>
-            <div style="font-size:.82rem;color:var(--text);font-style:italic">💡 ${p.summary}</div>
-          </div>
-        `).join('');
-        return `
-          <div style="margin-bottom:14px">
-            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;
-                        letter-spacing:.07em;color:var(--primary);margin-bottom:6px;
-                        padding-bottom:4px;border-bottom:1px solid var(--border)">
-              ${journal}
+            <div style="font-size:.74rem;color:var(--muted);margin:2px 0">
+              ${p.authors}${p.pub_date ? ` · ${p.pub_date}` : ''}
             </div>
-            ${items}
-          </div>
-        `;
-      }).join('');
+            <div style="font-size:.82rem;color:var(--text);font-style:italic">💡 ${p.summary}</div>
+          `;
+          secBody.appendChild(item);
+        });
 
-      const bubble = loadRow.querySelector('.bubble');
-      bubble.innerHTML = header + body;
+        hdr.onclick = function() {
+          const open = secBody.style.display !== 'none';
+          secBody.style.display = open ? 'none' : 'block';
+          arrow.textContent = open ? '▶' : '▼';
+        };
+
+        bubble.appendChild(hdr);
+        bubble.appendChild(secBody);
+      });
 
       // Action bar: Copy + Download
       const bar = document.createElement('div');
