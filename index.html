@@ -939,7 +939,8 @@ function setLang(lang) {
   });
 
   // ── Toggle panel ─────────────────────────────────────────────────
-  btn.addEventListener('click', function(){
+  btn.addEventListener('pointerdown', function(e){
+    e.preventDefault();
     open = !open;
     panel.classList.toggle('open', open);
     if (open && !loaded) {
