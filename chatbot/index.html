@@ -685,8 +685,17 @@ function buildPaperButton() {
       dlA.download = `papers-${data.date}.txt`;
       dlA.href = URL.createObjectURL(new Blob([plainText], { type: 'text/plain' }));
 
+      const topA = document.createElement('a');
+      topA.href = 'javascript:void(0)';
+      topA.textContent = isZh ? '⬆️ 回到顶部' : '⬆️ Top';
+      topA.style.cssText = 'font-size:.78rem;color:var(--primary);cursor:pointer;text-decoration:none';
+      topA.onclick = function() {
+        loadRow.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      };
+
       bar.appendChild(copyA);
       bar.appendChild(dlA);
+      bar.appendChild(topA);
       bubble.appendChild(bar);
       scroll();
 
