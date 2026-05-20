@@ -287,16 +287,27 @@ function updateInput() {
   input.addEventListener(evt, updateInput)
 );
 
-// Quark mobile's IME keyboard often doesn't fire input/keyup events.
-// Poll the value while the textarea is focused as a fallback.
-let _inputPoll = null;
-input.addEventListener("focus", () => {
-  _inputPoll = setInterval(updateInput, 100);
-});
-input.addEventListener("blur", () => {
-  clearInterval(_inputPoll);
-  _inputPoll = null;
-});
+// Quark mobile drops the focus event so the old focus-gated poll never starts.
+// Fix: persistent lightweight poll (only calls updateInput when value changed,
+// avoiding resize flicker on normal browsers) + touchstart/pointerdown to
+// manually force focus inside the user gesture so Quark routes IME input here.
+let _lastVal = "";
+setInterval(() => {
+  if (input.value !== _lastVal) {
+    _lastVal = input.value;
+    updateInput();
+  }
+}, 120);
+
+input.addEventListener("touchstart", () => {
+  input.focus();
+  updateInput();
+}, { passive: true });
+
+input.addEventListener("pointerdown", () => updateInput(), { passive: true });
+
+input.addEventListener("focus", updateInput);
+input.addEventListener("blur",  updateInput);
 
 input.addEventListener("keydown", e => {
   if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (!sendBtn.disabled) send(); }
