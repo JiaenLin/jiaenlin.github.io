@@ -938,40 +938,48 @@ function setLang(lang) {
     if (target) setTimeout(updateLabel, 50);
   });
 
-  // ── Toggle panel ─────────────────────────────────────────────────
-  function togglePanel() {
-    open = !open;
-    panel.classList.toggle('open', open);
-    if (open && !loaded) {
-      var f = document.createElement('iframe');
-      f.src = 'https://jiaenlin.github.io/chatbot/index.html?lang=' + currentLang;
-      f.title = 'Chat with Jiaen Lin';
-      f.allow = "autoplay; microphone; speaker-selection";
-      panel.appendChild(f);
-      loaded = true;
+  // On mobile, iframes inside fixed panels have unreliable touch handling in
+  // browsers like Quark. Navigate directly to the chatbot page instead.
+  var isMobile = ('ontouchstart' in window) && window.innerWidth < 768;
+
+  // ── Mobile: navigate directly to chatbot page ─────────────────────
+  if (isMobile) {
+    panel.style.display = 'none'; // panel not used on mobile
+    function goToChatbot() {
+      window.location.href = 'https://jiaenlin.github.io/chatbot/?lang=' + getLang();
     }
-    btn.querySelector('.icon').innerHTML = open
-      ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
-      : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+    var touchHandled = false;
+    btn.addEventListener('touchend', function(e) {
+      e.preventDefault();
+      touchHandled = true;
+      goToChatbot();
+      setTimeout(function() { touchHandled = false; }, 600);
+    }, { passive: false });
+    btn.addEventListener('click', function() {
+      if (touchHandled) return;
+      goToChatbot();
+    });
+
+  // ── Desktop: floating iframe panel ───────────────────────────────
+  } else {
+    function togglePanel() {
+      open = !open;
+      panel.classList.toggle('open', open);
+      if (open && !loaded) {
+        var f = document.createElement('iframe');
+        f.src = 'https://jiaenlin.github.io/chatbot/index.html?lang=' + getLang();
+        f.title = 'Chat with Jiaen Lin';
+        f.allow = "autoplay; microphone; speaker-selection";
+        panel.appendChild(f);
+        loaded = true;
+      }
+      btn.querySelector('.icon').innerHTML = open
+        ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+        : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+    }
+    btn.addEventListener('click', togglePanel);
+    document.addEventListener('keydown', function(e){ if(e.key==='Escape'&&open) togglePanel(); });
   }
-
-  // touchend is the most reliable event in Chinese mobile browsers (Quark/UC).
-  // The flag blocks the ghost click that fires ~300ms after touchend.
-  var touchHandled = false;
-  btn.addEventListener('touchend', function(e) {
-    e.preventDefault();
-    touchHandled = true;
-    togglePanel();
-    setTimeout(function() { touchHandled = false; }, 600);
-  }, { passive: false });
-
-  // click handles desktop/PC Quark and any non-touch device
-  btn.addEventListener('click', function() {
-    if (touchHandled) return;
-    togglePanel();
-  });
-
-  document.addEventListener('keydown', function(e){ if(e.key==='Escape'&&open) togglePanel(); });
 })();
 </script>
 </body>

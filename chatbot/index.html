@@ -78,6 +78,10 @@ textarea::placeholder{color:var(--faint)}
 
 <header class="header">
   <div class="identity">
+    <a id="backBtn" href="https://jiaenlin.github.io/" title="Back to main site"
+       style="display:none;width:34px;height:34px;border-radius:8px;align-items:center;justify-content:center;color:var(--muted);flex-shrink:0;text-decoration:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+    </a>
     <div class="avatar">J</div>
     <div class="id-text">
       <h1>Jiaen Lin</h1>
@@ -130,6 +134,11 @@ const urlParams = new URLSearchParams(window.location.search);
 const siteLang = urlParams.get('lang') || 'en';
 const isZh = siteLang.startsWith('zh');
 document.documentElement.lang = isZh ? 'zh-Hans' : 'en';
+
+// Show back button when opened as a standalone page on mobile (not in iframe)
+if (window.self === window.top && ('ontouchstart' in window) && window.innerWidth < 768) {
+  document.getElementById('backBtn').style.display = 'flex';
+}
 
 const I18N = {
   en: {
