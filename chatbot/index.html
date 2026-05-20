@@ -23,7 +23,7 @@ button{cursor:pointer;background:none;border:none;font:inherit;color:inherit}
 .id-text p{font-size:0.78rem;color:var(--muted)}
 .dot{display:inline-block;width:7px;height:7px;background:#22c55e;border-radius:50%;margin-right:4px;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.hbtn{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.hbtn{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
 .hbtn:hover{background:var(--surface2);color:var(--text)}
 
 /* Messages */
@@ -225,10 +225,15 @@ function getVisitorId() {
 // ── Theme — default light ────────────────────────────────────────
 let dark = false;
 setTheme(dark);
+let _themeTouchHandled = false;
+document.getElementById("themeBtn").addEventListener("touchend", e => {
+  e.preventDefault(); _themeTouchHandled = true;
+  dark = !dark; setTheme(dark);
+  setTimeout(() => { _themeTouchHandled = false; }, 600);
+}, { passive: false });
 document.getElementById("themeBtn").addEventListener("pointerdown", e => {
-  e.preventDefault();
-  dark = !dark;
-  setTheme(dark);
+  if (_themeTouchHandled) return;
+  e.preventDefault(); dark = !dark; setTheme(dark);
 });
 
 function setTheme(d) {
@@ -252,8 +257,7 @@ function unlockSpeech() {
   window.speechSynthesis.speak(u);
   speechUnlocked = true;
 }
-document.getElementById("muteBtn").addEventListener("pointerdown", e => {
-  e.preventDefault();
+function toggleMute() {
   voiceEnabled = !voiceEnabled;
   window.speechSynthesis.cancel();
   document.getElementById("muteBtn").innerHTML = voiceEnabled
@@ -265,16 +269,35 @@ document.getElementById("muteBtn").addEventListener("pointerdown", e => {
         <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
         <line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>
        </svg>`;
+}
+let _muteTouchHandled = false;
+document.getElementById("muteBtn").addEventListener("touchend", e => {
+  e.preventDefault(); _muteTouchHandled = true;
+  toggleMute();
+  setTimeout(() => { _muteTouchHandled = false; }, 600);
+}, { passive: false });
+document.getElementById("muteBtn").addEventListener("pointerdown", e => {
+  if (_muteTouchHandled) return;
+  e.preventDefault(); toggleMute();
 });
 
 // ── Clear chat ───────────────────────────────────────────────────
-document.getElementById("clearBtn").addEventListener("pointerdown", e => {
-  e.preventDefault();
+function clearChat() {
   history = [];
   window.speechSynthesis.cancel();
   [...msgs.querySelectorAll(".row")].slice(1).forEach(r => r.remove());
   chipsEl.style.display = "flex";
   if (!document.getElementById('paper-chip')) chipsEl.prepend(buildPaperButton());
+}
+let _clearTouchHandled = false;
+document.getElementById("clearBtn").addEventListener("touchend", e => {
+  e.preventDefault(); _clearTouchHandled = true;
+  clearChat();
+  setTimeout(() => { _clearTouchHandled = false; }, 600);
+}, { passive: false });
+document.getElementById("clearBtn").addEventListener("pointerdown", e => {
+  if (_clearTouchHandled) return;
+  e.preventDefault(); clearChat();
 });
 
 // ── Textarea auto-resize + enable send button ────────────────────
@@ -363,25 +386,38 @@ async function send() {
     typing.classList.remove("on");
     msgs.appendChild(row); scroll();
 
-    const reader = res.body.getReader();
-    const dec    = new TextDecoder();
-    let buf = "", full = "";
+    let full = "";
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += dec.decode(value, { stream: true });
-      const lines = buf.split("\n"); buf = lines.pop();
-      for (const line of lines) {
-        if (!line.startsWith("data: ")) continue;
+    function parseSSELines(text) {
+      text.split("\n").forEach(line => {
+        if (!line.startsWith("data: ")) return;
         const d = line.slice(6).trim();
-        if (d === "[DONE]") continue;
+        if (d === "[DONE]") return;
         try {
           const t = JSON.parse(d).response || JSON.parse(d).choices?.[0]?.delta?.content || "";
           if (t) { full += t; bubble.innerHTML = md(full); scroll(); }
         } catch {}
-      }
+      });
     }
+
+    if (res.body && res.body.getReader) {
+      // Streaming path (desktop Chrome, Safari, mobile Chrome)
+      const reader = res.body.getReader();
+      const dec    = new TextDecoder();
+      let buf = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        const lines = buf.split("\n"); buf = lines.pop();
+        parseSSELines(lines.join("\n"));
+      }
+    } else {
+      // Fallback for browsers that don't support ReadableStream (e.g. Quark mobile)
+      const text = await res.text();
+      parseSSELines(text);
+    }
+
     history.push({ role: "assistant", content: full });
     speak(full);
   } catch (err) {
