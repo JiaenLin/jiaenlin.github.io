@@ -557,6 +557,19 @@ function buildPaperButton() {
         byJournal[p.journal].push(p);
       });
 
+      // Build plain-text digest for copy/download
+      const lines = [
+        isZh
+          ? `今日论文 — ${data.date}（共 ${data.count} 篇）`
+          : `Today's Papers — ${data.date} (${data.count} papers)`,
+        ''
+      ];
+      Object.entries(byJournal).forEach(([journal, papers]) => {
+        lines.push(`=== ${journal} ===`, '');
+        papers.forEach(p => { lines.push(p.title, p.authors, `💡 ${p.summary}`, p.url, ''); });
+      });
+      const plainText = lines.join('\n');
+
       const header = isZh
         ? `📚 <b>今日论文 — ${data.date}</b>（共 ${data.count} 篇）<br><br>`
         : `📚 <b>Today's Papers — ${data.date}</b> &nbsp;(${data.count} papers)<br><br>`;
@@ -584,7 +597,39 @@ function buildPaperButton() {
         `;
       }).join('');
 
-      loadRow.querySelector('.bubble').innerHTML = header + body;
+      const bubble = loadRow.querySelector('.bubble');
+      bubble.innerHTML = header + body;
+
+      // Action bar: Copy + Download
+      const bar = document.createElement('div');
+      bar.style.cssText = 'display:flex;gap:8px;margin-top:14px;padding-top:10px;border-top:1px solid var(--border)';
+
+      const copyA = document.createElement('a');
+      copyA.href = 'javascript:void(0)';
+      copyA.textContent = isZh ? '📋 复制' : '📋 Copy';
+      copyA.style.cssText = 'font-size:.78rem;color:var(--primary);cursor:pointer;text-decoration:none';
+      copyA.onclick = function() {
+        const reset = () => { setTimeout(() => { copyA.textContent = isZh ? '📋 复制' : '📋 Copy'; }, 2000); };
+        navigator.clipboard.writeText(plainText).then(() => {
+          copyA.textContent = isZh ? '✅ 已复制' : '✅ Copied!'; reset();
+        }).catch(() => {
+          const ta = document.createElement('textarea');
+          ta.value = plainText;
+          ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+          document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+          copyA.textContent = isZh ? '✅ 已复制' : '✅ Copied!'; reset();
+        });
+      };
+
+      const dlA = document.createElement('a');
+      dlA.textContent = isZh ? '⬇️ 下载' : '⬇️ Download';
+      dlA.style.cssText = 'font-size:.78rem;color:var(--primary);cursor:pointer;text-decoration:none';
+      dlA.download = `papers-${data.date}.txt`;
+      dlA.href = URL.createObjectURL(new Blob([plainText], { type: 'text/plain' }));
+
+      bar.appendChild(copyA);
+      bar.appendChild(dlA);
+      bubble.appendChild(bar);
       scroll();
 
     } catch (err) {
