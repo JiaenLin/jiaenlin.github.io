@@ -198,11 +198,6 @@ def fetch_papers(journal_ta, journal_name, max_results=5, use_bio_filter=True):
             else:
                 pub_date = pub_year
 
-            mesh_terms = [
-                node.text for node in article.findall('.//MeshHeading/DescriptorName')
-                if node.text
-            ]
-
             papers.append({
                 'title':         title,
                 'authors':       author_str,
@@ -212,7 +207,6 @@ def fetch_papers(journal_ta, journal_name, max_results=5, use_bio_filter=True):
                 'journal':       journal_name,
                 'pub_date':      pub_date,
                 'pub_date_sort': pub_date_sort_key(pub_date) if pub_date else '',
-                'mesh_terms':    mesh_terms,
             })
         except Exception as e:
             print(f'  Article parse error: {e}')
@@ -254,37 +248,7 @@ def summarise(abstract):
         print(f'  Groq error: {e}')
         return ' '.join(abstract.split()[:22]) + '…'
 
-# ── 3. MeSH-based trend extraction ────────────────────────────
-MESH_STOPLIST = {
-    'Humans', 'Animals', 'Male', 'Female', 'Adult', 'Mice', 'Rats',
-    'Middle Aged', 'Aged', 'Young Adult', 'Adolescent', 'Child', 'Infant',
-    'Signal Transduction', 'Gene Expression Regulation', 'Cell Line, Tumor',
-    'Retrospective Studies', 'Prospective Studies', 'Risk Factors',
-    'Treatment Outcome', 'Prognosis', 'Biomarkers', 'Disease Models, Animal',
-    'Gene Expression', 'Cells, Cultured', 'Cell Proliferation', 'Apoptosis',
-    'Mice, Inbred C57BL', 'Mice, Knockout', 'Cells',
-}
-
-def top_mesh_terms(papers, n=3):
-    from collections import Counter
-    counts = Counter()
-    for p in papers:
-        for term in p.get('mesh_terms', []):
-            if term not in MESH_STOPLIST:
-                counts[term] += 1
-    # Pick top N with no overlapping words between chosen terms
-    seen_words = set()
-    result = []
-    for term, _ in counts.most_common(n * 5):
-        words = set(term.lower().split())
-        if not words & seen_words:
-            result.append(term)
-            seen_words |= words
-        if len(result) == n:
-            break
-    return ' · '.join(result) if result else ''
-
-# ── 4. Save to GitHub Gist ─────────────────────────────────────
+# ── 3. Save to GitHub Gist ─────────────────────────────────────
 def save_to_gist(data):
     r = requests.patch(
         f'https://api.github.com/gists/{GIST_ID}',
@@ -340,18 +304,10 @@ def main():
 
     print(f'\n✅ Total: {len(all_papers)} papers across all journals')
 
-    print('\nExtracting MeSH trends...')
-    analysis = top_mesh_terms(all_papers)
-    print(f'  → {analysis if analysis else "no MeSH data yet"}')
-
-    for p in all_papers:
-        p.pop('mesh_terms', None)
-
     result = {
-        'date':           TODAY,
-        'count':          len(all_papers),
-        'papers':         all_papers,
-        'trend_analysis': analysis,
+        'date':   TODAY,
+        'count':  len(all_papers),
+        'papers': all_papers,
     }
 
     # Save

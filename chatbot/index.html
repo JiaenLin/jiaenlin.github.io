@@ -567,10 +567,6 @@ function buildPaperButton() {
           : `Today's Papers — ${data.date} (${data.count} papers)`,
         ''
       ];
-      if (data.trend_analysis) {
-        lines.push(isZh ? '【今日研究主题】' : "=== Today's Research Themes ===", '');
-        lines.push(data.trend_analysis, '');
-      }
       Object.entries(byJournal).forEach(([journal, papers]) => {
         lines.push(`=== ${journal} ===`, '');
         papers.forEach(p => { lines.push(p.title, p.authors + (p.pub_date ? ` · ${p.pub_date}` : ''), `💡 ${p.summary}`, p.url, ''); });
@@ -605,15 +601,7 @@ function buildPaperButton() {
       }).join('');
 
       const bubble = loadRow.querySelector('.bubble');
-      const analysisHtml = data.trend_analysis
-        ? `<div style="display:inline-flex;align-items:center;gap:6px;
-                       background:var(--primary-l);border:1px solid var(--primary);
-                       border-radius:99px;padding:5px 12px;margin-bottom:14px;
-                       font-size:.78rem;color:var(--primary);font-weight:500">
-             🔍 ${esc(data.trend_analysis)}
-           </div><br>`
-        : '';
-      bubble.innerHTML = analysisHtml + header + body;
+      bubble.innerHTML = header + body;
 
       // Action bar: Copy + Download
       const bar = document.createElement('div');
