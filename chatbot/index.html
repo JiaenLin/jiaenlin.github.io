@@ -567,6 +567,10 @@ function buildPaperButton() {
           : `Today's Papers — ${data.date} (${data.count} papers)`,
         ''
       ];
+      if (data.trend_analysis) {
+        lines.push(isZh ? '【今日研究主题】' : "=== Today's Research Themes ===", '');
+        lines.push(data.trend_analysis, '');
+      }
       Object.entries(byJournal).forEach(([journal, papers]) => {
         lines.push(`=== ${journal} ===`, '');
         papers.forEach(p => { lines.push(p.title, p.authors + (p.pub_date ? ` · ${p.pub_date}` : ''), `💡 ${p.summary}`, p.url, ''); });
@@ -601,7 +605,18 @@ function buildPaperButton() {
       }).join('');
 
       const bubble = loadRow.querySelector('.bubble');
-      bubble.innerHTML = header + body;
+      const analysisHtml = data.trend_analysis
+        ? `<div style="background:var(--primary-l);border:1px solid var(--primary);
+                       border-radius:8px;padding:10px 14px;margin-bottom:16px;
+                       font-size:.85rem;line-height:1.7">
+             <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;
+                         letter-spacing:.07em;color:var(--primary);margin-bottom:6px">
+               🔍 ${isZh ? '今日研究主题' : "Today's Research Themes"}
+             </div>
+             ${esc(data.trend_analysis).replace(/\n/g, '<br>')}
+           </div>`
+        : '';
+      bubble.innerHTML = analysisHtml + header + body;
 
       // Action bar: Copy + Download
       const bar = document.createElement('div');

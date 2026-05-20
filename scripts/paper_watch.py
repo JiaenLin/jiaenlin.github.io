@@ -248,7 +248,48 @@ def summarise(abstract):
         print(f'  Groq error: {e}')
         return ' '.join(abstract.split()[:22]) + '…'
 
-# ── 3. Save to GitHub Gist ─────────────────────────────────────
+# ── 3. Trend analysis with Groq ───────────────────────────────
+def trend_analysis(papers):
+    if not GROQ_KEY:
+        return ''
+    digest = '\n'.join(
+        f'[{p["journal"]}] {p["title"]} — {p["summary"]}'
+        for p in papers
+    )
+    try:
+        r = requests.post(
+            'https://api.groq.com/openai/v1/chat/completions',
+            headers={
+                'Authorization': f'Bearer {GROQ_KEY}',
+                'Content-Type':  'application/json',
+            },
+            json={
+                'model':       'llama-3.3-70b-versatile',
+                'max_tokens':  300,
+                'temperature': 0.4,
+                'messages': [{
+                    'role':    'system',
+                    'content': (
+                        'You are a computational biology research assistant. '
+                        'Given today\'s paper digest from major journals, write '
+                        '3-5 bullet points identifying the major research themes. '
+                        'Flag anything relevant to single-cell genomics, multi-omics, '
+                        'or cardiovascular biology. Plain English, under 150 words. '
+                        'No preamble, no closing remarks.'
+                    )
+                }, {
+                    'role':    'user',
+                    'content': f"Today's papers:\n\n{digest}"
+                }]
+            },
+            timeout=30
+        )
+        return r.json()['choices'][0]['message']['content'].strip()
+    except Exception as e:
+        print(f'  Trend analysis error: {e}')
+        return ''
+
+# ── 4. Save to GitHub Gist ─────────────────────────────────────
 def save_to_gist(data):
     r = requests.patch(
         f'https://api.github.com/gists/{GIST_ID}',
@@ -304,10 +345,18 @@ def main():
 
     print(f'\n✅ Total: {len(all_papers)} papers across all journals')
 
+    print('\nRunning trend analysis...')
+    analysis = trend_analysis(all_papers)
+    if analysis:
+        print(f'  → {analysis[:120]}...')
+    else:
+        print('  → skipped (no GROQ_KEY)')
+
     result = {
-        'date':   TODAY,
-        'count':  len(all_papers),
-        'papers': all_papers,
+        'date':           TODAY,
+        'count':          len(all_papers),
+        'papers':         all_papers,
+        'trend_analysis': analysis,
     }
 
     # Save
