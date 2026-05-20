@@ -274,16 +274,35 @@ function updateInput() {
   input.style.height = Math.min(input.scrollHeight, 120) + "px";
   sendBtn.disabled = !input.value.trim() || streaming;
 }
-["input", "keyup", "compositionend", "change"].forEach(evt =>
+["input", "keyup", "compositionend", "compositionupdate", "change"].forEach(evt =>
   input.addEventListener(evt, updateInput)
 );
+
+// Quark mobile's IME keyboard often doesn't fire input/keyup events.
+// Poll the value while the textarea is focused as a fallback.
+let _inputPoll = null;
+input.addEventListener("focus", () => {
+  _inputPoll = setInterval(updateInput, 100);
+});
+input.addEventListener("blur", () => {
+  clearInterval(_inputPoll);
+  _inputPoll = null;
+});
 
 input.addEventListener("keydown", e => {
   if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (!sendBtn.disabled) send(); }
 });
 
-// ── Send button — pointerdown for Quark mobile ───────────────────
+// ── Send button — touchend + pointerdown for Quark mobile ────────
+let _sendTouchHandled = false;
+sendBtn.addEventListener("touchend", e => {
+  e.preventDefault();
+  _sendTouchHandled = true;
+  if (!sendBtn.disabled) send();
+  setTimeout(() => { _sendTouchHandled = false; }, 600);
+}, { passive: false });
 sendBtn.addEventListener("pointerdown", e => {
+  if (_sendTouchHandled) return;
   e.preventDefault();
   if (!sendBtn.disabled) send();
 });
