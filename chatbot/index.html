@@ -219,6 +219,18 @@ function setTheme(d) {
 
 // ── Voice output toggle ──────────────────────────────────────────
 let voiceEnabled = false;
+let speechUnlocked = false;
+
+// iOS/Android require speechSynthesis.speak() to be called synchronously
+// inside a user-gesture handler. We fire a silent utterance on first send
+// to unlock the audio context, so the real speak() call after await works.
+function unlockSpeech() {
+  if (speechUnlocked || !window.speechSynthesis) return;
+  const u = new SpeechSynthesisUtterance('');
+  u.volume = 0;
+  window.speechSynthesis.speak(u);
+  speechUnlocked = true;
+}
 document.getElementById("muteBtn").addEventListener("pointerdown", e => {
   e.preventDefault();
   voiceEnabled = !voiceEnabled;
@@ -279,6 +291,7 @@ chipsEl.addEventListener("pointerdown", e => {
 async function send() {
   const text = input.value.trim();
   if (!text || streaming) return;
+  unlockSpeech();
   chipsEl.style.display = "none";
   addMsg("user", text);
   history.push({ role: "user", content: text });
