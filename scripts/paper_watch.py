@@ -173,6 +173,17 @@ def fetch_papers(journal_ta, journal_name, max_results=5, use_bio_filter=True):
             url      = (f'https://doi.org/{doi}' if doi
                         else f'https://pubmed.ncbi.nlm.nih.gov/{pmid}/')
 
+            pub_year  = article.findtext('.//PubDate/Year', '')
+            pub_month = article.findtext('.//PubDate/Month', '')
+            pub_day   = article.findtext('.//PubDate/Day', '')
+            medline   = article.findtext('.//PubDate/MedlineDate', '')
+            if pub_year and pub_month:
+                pub_date = f'{pub_year} {pub_month}' + (f' {pub_day}' if pub_day else '')
+            elif medline:
+                pub_date = medline
+            else:
+                pub_date = pub_year
+
             papers.append({
                 'title':    title,
                 'authors':  author_str,
@@ -180,6 +191,7 @@ def fetch_papers(journal_ta, journal_name, max_results=5, use_bio_filter=True):
                 'url':      url,
                 'pmid':     pmid,
                 'journal':  journal_name,
+                'pub_date': pub_date,
             })
         except Exception as e:
             print(f'  Article parse error: {e}')

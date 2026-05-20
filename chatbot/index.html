@@ -566,7 +566,7 @@ function buildPaperButton() {
       ];
       Object.entries(byJournal).forEach(([journal, papers]) => {
         lines.push(`=== ${journal} ===`, '');
-        papers.forEach(p => { lines.push(p.title, p.authors, `💡 ${p.summary}`, p.url, ''); });
+        papers.forEach(p => { lines.push(p.title, p.authors + (p.pub_date ? ` · ${p.pub_date}` : ''), `💡 ${p.summary}`, p.url, ''); });
       });
       const plainText = lines.join('\n');
 
@@ -581,7 +581,7 @@ function buildPaperButton() {
                style="font-weight:600;color:var(--text);font-size:.87rem;line-height:1.4;display:block">
               ${p.title}
             </a>
-            <div style="font-size:.74rem;color:var(--muted);margin:2px 0">${p.authors}</div>
+            <div style="font-size:.74rem;color:var(--muted);margin:2px 0">${p.authors}${p.pub_date ? ` · ${p.pub_date}` : ''}</div>
             <div style="font-size:.82rem;color:var(--text);font-style:italic">💡 ${p.summary}</div>
           </div>
         `).join('');
