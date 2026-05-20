@@ -187,8 +187,20 @@ T.chips.forEach(({ label, prompt }) => {
 
 // ── Core Setup ───────────────────────────────────────────────────
 const WORKER = "https://jiaen-digital-twin.jiaenlin999.workers.dev/chat";
-window.speechSynthesis.getVoices();
 let history = [], streaming = false;
+
+// Pre-cache voices so speak() never needs a setTimeout retry (iOS blocks
+// speechSynthesis.speak() called from a timeout — it must run synchronously
+// inside, or after unlocking within, a user gesture).
+let cachedVoices = [];
+function loadVoices() {
+  const v = window.speechSynthesis.getVoices();
+  if (v.length) cachedVoices = v;
+}
+loadVoices();
+if ('onvoiceschanged' in window.speechSynthesis) {
+  window.speechSynthesis.onvoiceschanged = loadVoices;
+}
 
 const msgs    = document.getElementById("msgs");
 const input   = document.getElementById("input");
@@ -368,6 +380,9 @@ function scroll() { msgs.scrollTo({ top: msgs.scrollHeight, behavior: "smooth" }
 function speak(text) {
   if (!window.speechSynthesis || !voiceEnabled) return;
   window.speechSynthesis.cancel();
+  // iOS Safari silently pauses synthesis; resume() before speaking fixes it.
+  window.speechSynthesis.resume();
+
   const plain = text
     .replace(/```[\s\S]*?```/g, 'code block')
     .replace(/`([^`]+)`/g, '$1')
@@ -381,32 +396,30 @@ function speak(text) {
   utter.rate  = 1.4;
   utter.pitch = 1;
 
-  function assignVoiceAndSpeak() {
-    const voices = window.speechSynthesis.getVoices();
-    if (voices.length === 0) { setTimeout(assignVoiceAndSpeak, 100); return; }
-    const zhMalePriority = ['zhiwei','yunjian','yunyang','yunxi','kangkang'];
-    const enMalePriority = ['male','alex','daniel','mark','david'];
-    const priority   = isZh ? zhMalePriority : enMalePriority;
-    const langVoices = voices.filter(v => v.lang.startsWith(isZh ? 'zh' : 'en'));
-    let maleVoice = null, bestRank = -1;
-    for (const v of langVoices) {
-      const name = v.name.toLowerCase();
-      const rank = priority.findIndex(k => name.includes(k));
-      if (rank > bestRank) { bestRank = rank; maleVoice = v; }
-      if (bestRank === -1 && (name.includes('male') || v.name.includes('男'))) maleVoice = v;
-    }
-    if (maleVoice && isZh && !maleVoice.lang.startsWith('zh-CN')) {
-      const cnMatch = langVoices.find(v => v.lang === 'zh-CN' && priority.some(k => v.name.toLowerCase().includes(k)));
-      if (cnMatch) maleVoice = cnMatch;
-    }
-    if (!maleVoice && isZh) {
-      const zhVoices = voices.filter(v => v.lang.startsWith('zh'));
-      if (zhVoices.length > 1) maleVoice = zhVoices[1];
-    }
-    if (maleVoice) utter.voice = maleVoice;
-    window.speechSynthesis.speak(utter);
+  // Use pre-cached voices — no setTimeout retry, which would run outside the
+  // gesture context and be silently blocked by iOS.
+  const voices = cachedVoices.length ? cachedVoices : window.speechSynthesis.getVoices();
+  const zhMalePriority = ['zhiwei','yunjian','yunyang','yunxi','kangkang'];
+  const enMalePriority = ['male','alex','daniel','mark','david'];
+  const priority   = isZh ? zhMalePriority : enMalePriority;
+  const langVoices = voices.filter(v => v.lang.startsWith(isZh ? 'zh' : 'en'));
+  let maleVoice = null, bestRank = -1;
+  for (const v of langVoices) {
+    const name = v.name.toLowerCase();
+    const rank = priority.findIndex(k => name.includes(k));
+    if (rank > bestRank) { bestRank = rank; maleVoice = v; }
+    if (bestRank === -1 && (name.includes('male') || v.name.includes('男'))) maleVoice = v;
   }
-  assignVoiceAndSpeak();
+  if (maleVoice && isZh && !maleVoice.lang.startsWith('zh-CN')) {
+    const cnMatch = langVoices.find(v => v.lang === 'zh-CN' && priority.some(k => v.name.toLowerCase().includes(k)));
+    if (cnMatch) maleVoice = cnMatch;
+  }
+  if (!maleVoice && isZh) {
+    const zhVoices = voices.filter(v => v.lang.startsWith('zh'));
+    if (zhVoices.length > 1) maleVoice = zhVoices[1];
+  }
+  if (maleVoice) utter.voice = maleVoice;
+  window.speechSynthesis.speak(utter);
 }
 
 // ── Markdown renderer ────────────────────────────────────────────
