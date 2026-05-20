@@ -8,6 +8,20 @@ import requests, json, os, re, time
 from datetime import date, timedelta
 from xml.etree import ElementTree as ET
 
+MONTH_NUM = {
+    'Jan':'01','Feb':'02','Mar':'03','Apr':'04','May':'05','Jun':'06',
+    'Jul':'07','Aug':'08','Sep':'09','Oct':'10','Nov':'11','Dec':'12',
+    'January':'01','February':'02','March':'03','April':'04','June':'06',
+    'July':'07','August':'08','September':'09','October':'10','November':'11','December':'12',
+}
+
+def pub_date_sort_key(pub_date):
+    parts = pub_date.split()
+    year  = parts[0] if parts else '0000'
+    month = MONTH_NUM.get(parts[1].split('-')[0], '00') if len(parts) > 1 else '00'
+    day   = parts[2].zfill(2) if len(parts) > 2 else '00'
+    return f'{year}-{month}-{day}'
+
 # ── Credentials ────────────────────────────────────────────────
 GIST_ID  = os.environ.get('GIST_ID',  '')
 GH_TOKEN = os.environ.get('GH_TOKEN', '')
@@ -185,13 +199,14 @@ def fetch_papers(journal_ta, journal_name, max_results=5, use_bio_filter=True):
                 pub_date = pub_year
 
             papers.append({
-                'title':    title,
-                'authors':  author_str,
-                'abstract': abstract,
-                'url':      url,
-                'pmid':     pmid,
-                'journal':  journal_name,
-                'pub_date': pub_date,
+                'title':         title,
+                'authors':       author_str,
+                'abstract':      abstract,
+                'url':           url,
+                'pmid':          pmid,
+                'journal':       journal_name,
+                'pub_date':      pub_date,
+                'pub_date_sort': pub_date_sort_key(pub_date) if pub_date else '',
             })
         except Exception as e:
             print(f'  Article parse error: {e}')

@@ -556,6 +556,9 @@ function buildPaperButton() {
         if (!byJournal[p.journal]) byJournal[p.journal] = [];
         byJournal[p.journal].push(p);
       });
+      Object.values(byJournal).forEach(papers =>
+        papers.sort((a, b) => (b.pub_date_sort || '').localeCompare(a.pub_date_sort || ''))
+      );
 
       // Build plain-text digest for copy/download
       const lines = [
