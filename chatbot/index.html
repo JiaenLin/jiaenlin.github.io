@@ -606,15 +606,12 @@ function buildPaperButton() {
 
       const bubble = loadRow.querySelector('.bubble');
       const analysisHtml = data.trend_analysis
-        ? `<div style="background:var(--primary-l);border:1px solid var(--primary);
-                       border-radius:8px;padding:10px 14px;margin-bottom:16px;
-                       font-size:.85rem;line-height:1.7">
-             <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;
-                         letter-spacing:.07em;color:var(--primary);margin-bottom:6px">
-               🔍 ${isZh ? '今日研究主题' : "Today's Research Themes"}
-             </div>
-             ${esc(data.trend_analysis).replace(/\n/g, '<br>')}
-           </div>`
+        ? `<div style="display:inline-flex;align-items:center;gap:6px;
+                       background:var(--primary-l);border:1px solid var(--primary);
+                       border-radius:99px;padding:5px 12px;margin-bottom:14px;
+                       font-size:.78rem;color:var(--primary);font-weight:500">
+             🔍 ${esc(data.trend_analysis)}
+           </div><br>`
         : '';
       bubble.innerHTML = analysisHtml + header + body;
 

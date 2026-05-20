@@ -265,17 +265,14 @@ def trend_analysis(papers):
             },
             json={
                 'model':       'llama-3.3-70b-versatile',
-                'max_tokens':  300,
-                'temperature': 0.4,
+                'max_tokens':  30,
+                'temperature': 0.2,
                 'messages': [{
                     'role':    'system',
                     'content': (
-                        'You are a computational biology research assistant. '
-                        'Given today\'s paper digest from major journals, write '
-                        '3-5 bullet points identifying the major research themes. '
-                        'Flag anything relevant to single-cell genomics, multi-omics, '
-                        'or cardiovascular biology. Plain English, under 150 words. '
-                        'No preamble, no closing remarks.'
+                        'Return exactly 3 distinct, non-overlapping keywords that '
+                        'capture the dominant research themes across these papers. '
+                        'Output only the 3 keywords separated by " · ". No explanation, no punctuation, nothing else.'
                     )
                 }, {
                     'role':    'user',
