@@ -198,6 +198,11 @@ def fetch_papers(journal_ta, journal_name, max_results=5, use_bio_filter=True):
             else:
                 pub_date = pub_year
 
+            mesh_terms = [
+                node.text for node in article.findall('.//MeshHeading/DescriptorName')
+                if node.text
+            ]
+
             papers.append({
                 'title':         title,
                 'authors':       author_str,
@@ -207,6 +212,7 @@ def fetch_papers(journal_ta, journal_name, max_results=5, use_bio_filter=True):
                 'journal':       journal_name,
                 'pub_date':      pub_date,
                 'pub_date_sort': pub_date_sort_key(pub_date) if pub_date else '',
+                'mesh_terms':    mesh_terms,
             })
         except Exception as e:
             print(f'  Article parse error: {e}')
@@ -248,45 +254,35 @@ def summarise(abstract):
         print(f'  Groq error: {e}')
         return ' '.join(abstract.split()[:22]) + '…'
 
-# ── 3. Trend analysis with Groq ───────────────────────────────
-def trend_analysis(papers):
-    if not GROQ_KEY:
-        return ''
-    digest = '\n'.join(
-        f'[{p["journal"]}] {p["title"]} — {p["summary"]}'
-        for p in papers
-    )
-    try:
-        r = requests.post(
-            'https://api.groq.com/openai/v1/chat/completions',
-            headers={
-                'Authorization': f'Bearer {GROQ_KEY}',
-                'Content-Type':  'application/json',
-            },
-            json={
-                'model':       'llama-3.3-70b-versatile',
-                'max_tokens':  30,
-                'temperature': 0.2,
-                'messages': [{
-                    'role':    'system',
-                    'content': (
-                        'Return exactly 3 specific biological topics that appear most across these papers. '
-                        'Use precise terms: specific pathways (e.g. Wnt signaling), diseases (e.g. Alzheimer\'s disease), '
-                        'molecules (e.g. p53), or mechanisms (e.g. mitochondrial fission). '
-                        'Never use broad fields like "gene expression", "cellular biology", or "AI". '
-                        'Output only the 3 terms separated by " · ". No explanation, no punctuation, nothing else.'
-                    )
-                }, {
-                    'role':    'user',
-                    'content': f"Today's papers:\n\n{digest}"
-                }]
-            },
-            timeout=30
-        )
-        return r.json()['choices'][0]['message']['content'].strip()
-    except Exception as e:
-        print(f'  Trend analysis error: {e}')
-        return ''
+# ── 3. MeSH-based trend extraction ────────────────────────────
+MESH_STOPLIST = {
+    'Humans', 'Animals', 'Male', 'Female', 'Adult', 'Mice', 'Rats',
+    'Middle Aged', 'Aged', 'Young Adult', 'Adolescent', 'Child', 'Infant',
+    'Signal Transduction', 'Gene Expression Regulation', 'Cell Line, Tumor',
+    'Retrospective Studies', 'Prospective Studies', 'Risk Factors',
+    'Treatment Outcome', 'Prognosis', 'Biomarkers', 'Disease Models, Animal',
+    'Gene Expression', 'Cells, Cultured', 'Cell Proliferation', 'Apoptosis',
+    'Mice, Inbred C57BL', 'Mice, Knockout', 'Cells',
+}
+
+def top_mesh_terms(papers, n=3):
+    from collections import Counter
+    counts = Counter()
+    for p in papers:
+        for term in p.get('mesh_terms', []):
+            if term not in MESH_STOPLIST:
+                counts[term] += 1
+    # Pick top N with no overlapping words between chosen terms
+    seen_words = set()
+    result = []
+    for term, _ in counts.most_common(n * 5):
+        words = set(term.lower().split())
+        if not words & seen_words:
+            result.append(term)
+            seen_words |= words
+        if len(result) == n:
+            break
+    return ' · '.join(result) if result else ''
 
 # ── 4. Save to GitHub Gist ─────────────────────────────────────
 def save_to_gist(data):
@@ -344,12 +340,12 @@ def main():
 
     print(f'\n✅ Total: {len(all_papers)} papers across all journals')
 
-    print('\nRunning trend analysis...')
-    analysis = trend_analysis(all_papers)
-    if analysis:
-        print(f'  → {analysis[:120]}...')
-    else:
-        print('  → skipped (no GROQ_KEY)')
+    print('\nExtracting MeSH trends...')
+    analysis = top_mesh_terms(all_papers)
+    print(f'  → {analysis if analysis else "no MeSH data yet"}')
+
+    for p in all_papers:
+        p.pop('mesh_terms', None)
 
     result = {
         'date':           TODAY,
