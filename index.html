@@ -1062,11 +1062,10 @@ function setLang(lang) {
 </script>
 <script type="module">
 // Globe visualization: cobe (MIT License) by Shu Ding — https://github.com/shuding/cobe
-import createGlobe from 'https://cdn.jsdelivr.net/npm/cobe/dist/index.esm.js';
-(function() {
-  const canvas = document.getElementById('globe-canvas');
-  if (!canvas) return;
+import createGlobe from './scripts/cobe.esm.js';
 
+const canvas = document.getElementById('globe-canvas');
+if (canvas) {
   const isDark = () => document.documentElement.dataset.theme === 'dark';
 
   function globeColors(dark) {
@@ -1080,6 +1079,7 @@ import createGlobe from 'https://cdn.jsdelivr.net/npm/cobe/dist/index.esm.js';
   let phi = lonToPhi(103.8);
   let targetPhi = phi;
   let autoRotate = true;
+  let globe = null;
 
   const markers = [
     { location: [1.3521,   103.8198], size: 0.07 },
@@ -1093,13 +1093,14 @@ import createGlobe from 'https://cdn.jsdelivr.net/npm/cobe/dist/index.esm.js';
     { startLat:1.3521, startLng:103.8198, endLat:41.3851,  endLng:2.1734,   arcAlt:0.4  },
   ];
 
-  let globe = null;
   function initGlobe() {
-    if (globe) globe.destroy();
-    const c = globeColors(isDark());
-    const size = Math.max(canvas.parentElement.offsetWidth, 200);
+    if (globe) { globe.destroy(); globe = null; }
+    const size = canvas.parentElement.offsetWidth || 420;
     canvas.width  = size * 2;
     canvas.height = size * 2;
+    canvas.style.width  = size + 'px';
+    canvas.style.height = size + 'px';
+    const c = globeColors(isDark());
     globe = createGlobe(canvas, {
       devicePixelRatio: 2,
       width: size * 2, height: size * 2,
@@ -1116,10 +1117,15 @@ import createGlobe from 'https://cdn.jsdelivr.net/npm/cobe/dist/index.esm.js';
     });
   }
 
-  initGlobe();
+  // Init when section scrolls into view (guarantees layout is ready)
+  const io = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting && !globe) initGlobe();
+  }, { threshold: 0.1 });
+  io.observe(canvas);
 
-  const observer = new MutationObserver(() => initGlobe());
-  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  // Re-init on theme change
+  new MutationObserver(() => { if (globe) initGlobe(); })
+    .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
   document.getElementById('globe-cards').querySelectorAll('.globe-card').forEach(card => {
     card.addEventListener('click', () => {
@@ -1134,7 +1140,7 @@ import createGlobe from 'https://cdn.jsdelivr.net/npm/cobe/dist/index.esm.js';
 
   canvas.addEventListener('mouseenter', () => { autoRotate = false; });
   canvas.addEventListener('mouseleave', () => { autoRotate = true; });
-})();
+}
 </script>
 </body>
 </html>
