@@ -314,6 +314,27 @@
       .skills-grid{grid-template-columns:1fr}
       .news-item{grid-template-columns:1fr;gap:var(--space-1)}
     }
+
+    /* === GLOBE SECTION === */
+    .globe-section{padding:var(--space-20) 0;border-top:1px solid var(--color-divider)}
+    .globe-section-header{margin-bottom:var(--space-10)}
+    .globe-layout{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-12);align-items:center}
+    .globe-wrap{position:relative;width:100%;max-width:420px;margin:0 auto;aspect-ratio:1}
+    .globe-wrap canvas{width:100%!important;height:100%!important}
+    .globe-cards{display:flex;flex-direction:column;gap:var(--space-4)}
+    .globe-card{display:flex;align-items:center;gap:var(--space-4);padding:var(--space-4) var(--space-5);border:1px solid var(--color-border);border-radius:var(--radius-lg);cursor:pointer;transition:border-color var(--transition-interactive),background var(--transition-interactive),box-shadow var(--transition-interactive);background:var(--color-surface)}
+    .globe-card:hover,.globe-card.active{border-color:var(--color-primary);background:var(--color-surface-2);box-shadow:var(--shadow-md)}
+    .globe-card-flag{font-size:2rem;flex-shrink:0;line-height:1}
+    .globe-card-city{font-size:var(--text-base);font-weight:600;color:var(--color-text)}
+    .globe-card-inst{font-size:var(--text-sm);color:var(--color-text-muted);margin-top:2px}
+    .globe-card-role{font-size:var(--text-xs);color:var(--color-primary);margin-top:4px;font-weight:500}
+    .globe-credit{margin-top:var(--space-6);font-size:var(--text-xs);color:var(--color-text-faint);text-align:center}
+    .globe-credit a{color:var(--color-text-faint)}
+    .globe-credit a:hover{color:var(--color-primary)}
+    @media(max-width:768px){
+      .globe-layout{grid-template-columns:1fr}
+      .globe-wrap{max-width:300px}
+    }
   </style>
 </head>
 <body>
@@ -334,6 +355,7 @@
         <a href="#news"      data-en="News"           data-zh="动态">News</a>
         <a href="#publications" data-en="Publications" data-zh="发表论文">Publications</a>
         <a href="#experience" data-en="Experience"   data-zh="研究经历">Experience</a>
+        <a href="#network"   data-en="Network"        data-zh="科研网络">Network</a>
         <a href="#contact"   data-en="Contact"        data-zh="联系方式">Contact</a>
         <!-- Language toggle -->
         <div class="lang-toggle" aria-label="Switch language">
@@ -714,6 +736,53 @@
   </div>
 </section>
 
+<!-- Globe visualization powered by cobe (MIT License) by Shu Ding: https://github.com/shuding/cobe -->
+<section class="globe-section" id="network">
+  <div class="container">
+    <div class="globe-section-header">
+      <span class="section-label" data-en="Global" data-zh="全球">Global</span>
+      <h2 class="section-title" data-en="Research Network" data-zh="科研网络">Research Network</h2>
+    </div>
+    <div class="globe-layout">
+      <div class="globe-wrap">
+        <canvas id="globe-canvas"></canvas>
+      </div>
+      <div class="globe-cards" id="globe-cards">
+        <div class="globe-card active" data-lat="1.3521" data-lon="103.8198">
+          <div class="globe-card-flag">🇸🇬</div>
+          <div>
+            <div class="globe-card-city" data-en="Singapore" data-zh="新加坡">Singapore</div>
+            <div class="globe-card-inst" data-en="Duke-NUS Medical School" data-zh="杜克-新加坡国立大学医学院">Duke-NUS Medical School</div>
+            <div class="globe-card-role" data-en="Research Fellow · Current" data-zh="研究员 · 现职">Research Fellow · Current</div>
+          </div>
+        </div>
+        <div class="globe-card" data-lat="35.8617" data-lon="104.1954">
+          <div class="globe-card-flag">🇨🇳</div>
+          <div>
+            <div class="globe-card-city" data-en="China" data-zh="中国">China</div>
+            <div class="globe-card-inst" data-en="Home country" data-zh="故乡">Home country</div>
+          </div>
+        </div>
+        <div class="globe-card" data-lat="-16.9186" data-lon="145.7781">
+          <div class="globe-card-flag">🇦🇺</div>
+          <div>
+            <div class="globe-card-city" data-en="Cairns, Australia" data-zh="凯恩斯，澳大利亚">Cairns, Australia</div>
+            <div class="globe-card-inst" data-en="Conference" data-zh="学术会议">Conference</div>
+          </div>
+        </div>
+        <div class="globe-card" data-lat="41.3851" data-lon="2.1734">
+          <div class="globe-card-flag">🇪🇸</div>
+          <div>
+            <div class="globe-card-city" data-en="Barcelona, Spain" data-zh="巴塞罗那，西班牙">Barcelona, Spain</div>
+            <div class="globe-card-inst" data-en="Conference" data-zh="学术会议">Conference</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="globe-credit">Globe powered by <a href="https://github.com/shuding/cobe" target="_blank" rel="noopener">cobe</a> (MIT) &middot; Shu Ding</p>
+  </div>
+</section>
+
 <!-- CONTACT -->
 <section id="contact">
   <div class="container">
@@ -989,6 +1058,82 @@ function setLang(lang) {
     btn.addEventListener('click', togglePanel);
     document.addEventListener('keydown', function(e){ if(e.key==='Escape'&&open) togglePanel(); });
   }
+})();
+</script>
+<script type="module">
+// Globe visualization: cobe (MIT License) by Shu Ding — https://github.com/shuding/cobe
+import createGlobe from 'https://cdn.jsdelivr.net/npm/cobe/dist/index.esm.js';
+(function() {
+  const canvas = document.getElementById('globe-canvas');
+  if (!canvas) return;
+
+  const isDark = () => document.documentElement.dataset.theme === 'dark';
+
+  function globeColors(dark) {
+    return dark
+      ? { baseColor:[0.12,0.22,0.22], markerColor:[0.31,0.60,0.64], glowColor:[0.12,0.22,0.22], dark:1, mapBrightness:3 }
+      : { baseColor:[0.88,0.95,0.93], markerColor:[0.004,0.412,0.435], glowColor:[0.88,0.95,0.93], dark:0, mapBrightness:6 };
+  }
+
+  function lonToPhi(lon) { return -(lon * Math.PI / 180); }
+
+  let phi = lonToPhi(103.8);
+  let targetPhi = phi;
+  let autoRotate = true;
+
+  const markers = [
+    { location: [1.3521,   103.8198], size: 0.07 },
+    { location: [35.8617,  104.1954], size: 0.06 },
+    { location: [-16.9186, 145.7781], size: 0.06 },
+    { location: [41.3851,    2.1734], size: 0.06 },
+  ];
+  const arcs = [
+    { startLat:1.3521, startLng:103.8198, endLat:35.8617,  endLng:104.1954, arcAlt:0.25 },
+    { startLat:1.3521, startLng:103.8198, endLat:-16.9186, endLng:145.7781, arcAlt:0.3  },
+    { startLat:1.3521, startLng:103.8198, endLat:41.3851,  endLng:2.1734,   arcAlt:0.4  },
+  ];
+
+  let globe = null;
+  function initGlobe() {
+    if (globe) globe.destroy();
+    const c = globeColors(isDark());
+    const size = Math.max(canvas.parentElement.offsetWidth, 200);
+    canvas.width  = size * 2;
+    canvas.height = size * 2;
+    globe = createGlobe(canvas, {
+      devicePixelRatio: 2,
+      width: size * 2, height: size * 2,
+      phi, theta: 0.2,
+      diffuse: 1.2, mapSamples: 16000,
+      ...c,
+      markers, arcs,
+      onRender(state) {
+        if (autoRotate) { phi += 0.003; targetPhi = phi; }
+        else { phi += (targetPhi - phi) * 0.05; }
+        state.phi = phi;
+        state.theta = 0.2;
+      }
+    });
+  }
+
+  initGlobe();
+
+  const observer = new MutationObserver(() => initGlobe());
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  document.getElementById('globe-cards').querySelectorAll('.globe-card').forEach(card => {
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.globe-card').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      targetPhi = lonToPhi(parseFloat(card.dataset.lon));
+      autoRotate = false;
+      clearTimeout(window._globeTimer);
+      window._globeTimer = setTimeout(() => { autoRotate = true; }, 4000);
+    });
+  });
+
+  canvas.addEventListener('mouseenter', () => { autoRotate = false; });
+  canvas.addEventListener('mouseleave', () => { autoRotate = true; });
 })();
 </script>
 </body>
