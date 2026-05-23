@@ -2,7 +2,8 @@ name: Daily Paper Digest
 
 on:
   schedule:
-    - cron: '0 0 * * *'   
+    - cron: '30 16 * * *'
+    - cron: '0 20 * * *'
   workflow_dispatch:
 
 jobs:
