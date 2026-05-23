@@ -1143,7 +1143,7 @@ if (canvas) {
   canvas.addEventListener('pointermove', e => {
     if (!isDragging) return;
     velPhi   =  (e.clientX - lastX) * 0.008;
-    velTheta = -(e.clientY - lastY) * 0.005;
+    velTheta =  (e.clientY - lastY) * 0.005;
     phi   += velPhi;
     theta  = Math.max(-0.65, Math.min(0.65, theta + velTheta));
     lastX = e.clientX; lastY = e.clientY;
