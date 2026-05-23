@@ -1080,6 +1080,7 @@ if (canvas) {
   let targetPhi = phi;
   let autoRotate = true;
   let globe = null;
+  let animId = null;
 
   const markers = [
     { location: [1.3521,   103.8198], size: 0.07 },
@@ -1094,27 +1095,32 @@ if (canvas) {
   ];
 
   function initGlobe() {
+    // Stop existing animation loop
+    if (animId) { cancelAnimationFrame(animId); animId = null; }
     if (globe) { globe.destroy(); globe = null; }
+
+    // cobe v2 API: width/height are logical CSS pixels; cobe multiplies by devicePixelRatio internally
     const size = canvas.parentElement.offsetWidth || 420;
-    canvas.width  = size * 2;
-    canvas.height = size * 2;
     canvas.style.width  = size + 'px';
     canvas.style.height = size + 'px';
     const c = globeColors(isDark());
     globe = createGlobe(canvas, {
       devicePixelRatio: 2,
-      width: size * 2, height: size * 2,
+      width: size, height: size,
       phi, theta: 0.2,
       diffuse: 1.2, mapSamples: 16000,
       ...c,
       markers, arcs,
-      onRender(state) {
-        if (autoRotate) { phi += 0.003; targetPhi = phi; }
-        else { phi += (targetPhi - phi) * 0.05; }
-        state.phi = phi;
-        state.theta = 0.2;
-      }
     });
+
+    // cobe v2: drive animation manually via globe.update()
+    function animate() {
+      if (autoRotate) { phi += 0.003; targetPhi = phi; }
+      else { phi += (targetPhi - phi) * 0.05; }
+      globe.update({ phi, theta: 0.2 });
+      animId = requestAnimationFrame(animate);
+    }
+    animate();
   }
 
   // Init when section scrolls into view (guarantees layout is ready)
