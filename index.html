@@ -1076,6 +1076,9 @@ if (canvas) {
   const [sgPhi, sgTheta] = locationToAngles(1.3521, 103.8198);
   let phi   = sgPhi;
   let theta = sgTheta;
+  let targetPhi   = phi;
+  let targetTheta = theta;
+  let isEasing    = false;
   let autoRotate  = true;
   let isDragging  = false;
   let lastX = 0, lastY = 0;
@@ -1114,7 +1117,14 @@ if (canvas) {
     });
     function animate() {
       if (!isDragging) {
-        if (autoRotate) {
+        if (isEasing) {
+          phi   += (targetPhi   - phi)   * 0.08;
+          theta += (targetTheta - theta) * 0.08;
+          if (Math.abs(targetPhi - phi) < 0.001 && Math.abs(targetTheta - theta) < 0.001) {
+            isEasing = false;
+            window._globeTimer = setTimeout(() => { autoRotate = true; }, 3000);
+          }
+        } else if (autoRotate) {
           phi += 0.003;
           velPhi = velTheta = 0;
         } else {
@@ -1133,6 +1143,7 @@ if (canvas) {
   // Drag: pointer events cover both mouse and touch
   canvas.addEventListener('pointerdown', e => {
     isDragging = true;
+    isEasing   = false;
     autoRotate = false;
     lastX = e.clientX; lastY = e.clientY;
     velPhi = velTheta = 0;
@@ -1166,11 +1177,15 @@ if (canvas) {
     card.addEventListener('click', () => {
       document.querySelectorAll('.globe-card').forEach(c => c.classList.remove('active'));
       card.classList.add('active');
-      const [p] = locationToAngles(parseFloat(card.dataset.lat), parseFloat(card.dataset.lon));
-      velPhi = (p - phi) * 0.05;
-      autoRotate = false;
+      const [p, t] = locationToAngles(parseFloat(card.dataset.lat), parseFloat(card.dataset.lon));
+      // Shortest-arc: normalize delta to [-PI, PI] so globe rotates the short way
+      let dPhi = ((p - phi) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI;
+      targetPhi   = phi + dPhi;
+      targetTheta = t;
+      isEasing    = true;
+      autoRotate  = false;
+      velPhi = velTheta = 0;
       clearTimeout(window._globeTimer);
-      window._globeTimer = setTimeout(() => { autoRotate = true; }, 4000);
     });
   });
 }
