@@ -1066,21 +1066,32 @@ import createGlobe from './scripts/cobe.esm.js';
 
 const canvas = document.getElementById('globe-canvas');
 if (canvas) {
-  const isDark = () => document.documentElement.dataset.theme === 'dark';
-
-  function globeColors(dark) {
-    return dark
-      ? { baseColor:[0.12,0.22,0.22], markerColor:[0.31,0.60,0.64], glowColor:[0.12,0.22,0.22], dark:1, mapBrightness:3 }
-      : { baseColor:[0.88,0.95,0.93], markerColor:[0.004,0.412,0.435], glowColor:[0.88,0.95,0.93], dark:0, mapBrightness:6 };
+  // cobe v2: phi/theta from lat/lon (per official recipe)
+  function locationToAngles(lat, lon) {
+    return [
+      Math.PI - ((lon * Math.PI) / 180 - Math.PI / 2),
+      (lat * Math.PI) / 180
+    ];
   }
 
-  function lonToPhi(lon) { return -(lon * Math.PI / 180); }
-
-  let phi = lonToPhi(103.8);
+  const [sgPhi, sgTheta] = locationToAngles(1.3521, 103.8198);
+  let phi = sgPhi;
   let targetPhi = phi;
   let autoRotate = true;
   let globe = null;
   let animId = null;
+
+  // White globe, teal markers
+  const GLOBE_CFG = {
+    baseColor:   [1, 1, 1],
+    glowColor:   [1, 1, 1],
+    markerColor: [0.004, 0.412, 0.435],
+    arcColor:    [0.004, 0.412, 0.435],
+    dark: 0,
+    diffuse: 1.2,
+    mapSamples: 16000,
+    mapBrightness: 6,
+  };
 
   const markers = [
     { location: [1.3521,   103.8198], size: 0.07 },
@@ -1088,48 +1099,40 @@ if (canvas) {
     { location: [-16.9186, 145.7781], size: 0.06 },
     { location: [41.3851,    2.1734], size: 0.06 },
   ];
+  // cobe v2 arc format: { from: [lat, lon], to: [lat, lon] }
   const arcs = [
-    { startLat:1.3521, startLng:103.8198, endLat:35.8617,  endLng:104.1954, arcAlt:0.25 },
-    { startLat:1.3521, startLng:103.8198, endLat:-16.9186, endLng:145.7781, arcAlt:0.3  },
-    { startLat:1.3521, startLng:103.8198, endLat:41.3851,  endLng:2.1734,   arcAlt:0.4  },
+    { from: [1.3521, 103.8198], to: [35.8617,  104.1954] },
+    { from: [1.3521, 103.8198], to: [-16.9186, 145.7781] },
+    { from: [1.3521, 103.8198], to: [41.3851,    2.1734] },
   ];
 
   function initGlobe() {
-    // Stop existing animation loop
     if (animId) { cancelAnimationFrame(animId); animId = null; }
     if (globe) { globe.destroy(); globe = null; }
-
-    // cobe v2 API: width/height are logical CSS pixels; cobe multiplies by devicePixelRatio internally
     const size = canvas.parentElement.offsetWidth || 420;
     canvas.style.width  = size + 'px';
     canvas.style.height = size + 'px';
-    const c = globeColors(isDark());
     globe = createGlobe(canvas, {
       devicePixelRatio: 2,
       width: size, height: size,
-      phi, theta: 0.2,
-      diffuse: 1.2, mapSamples: 16000,
-      ...c,
+      phi, theta: sgTheta,
+      ...GLOBE_CFG,
       markers, arcs,
     });
-
-    // cobe v2: drive animation manually via globe.update()
     function animate() {
       if (autoRotate) { phi += 0.003; targetPhi = phi; }
       else { phi += (targetPhi - phi) * 0.05; }
-      globe.update({ phi, theta: 0.2 });
+      globe.update({ phi });
       animId = requestAnimationFrame(animate);
     }
     animate();
   }
 
-  // Init when section scrolls into view (guarantees layout is ready)
   const io = new IntersectionObserver(entries => {
     if (entries[0].isIntersecting && !globe) initGlobe();
   }, { threshold: 0.1 });
   io.observe(canvas);
 
-  // Re-init on theme change
   new MutationObserver(() => { if (globe) initGlobe(); })
     .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
@@ -1137,7 +1140,8 @@ if (canvas) {
     card.addEventListener('click', () => {
       document.querySelectorAll('.globe-card').forEach(c => c.classList.remove('active'));
       card.classList.add('active');
-      targetPhi = lonToPhi(parseFloat(card.dataset.lon));
+      const [lat, lon] = [parseFloat(card.dataset.lat), parseFloat(card.dataset.lon)];
+      [targetPhi] = locationToAngles(lat, lon);
       autoRotate = false;
       clearTimeout(window._globeTimer);
       window._globeTimer = setTimeout(() => { autoRotate = true; }, 4000);
