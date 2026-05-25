@@ -4,8 +4,8 @@ Daily paper watcher — Nature, Science, Cell + specialist journals
 Uses NCBI API key (10 req/sec) + Groq for summaries
 Stores result to GitHub Gist
 """
-import requests, json, os, re, time
-from datetime import date, timedelta
+import requests, json, os, re, time, sys
+from datetime import datetime, date, timedelta, timezone
 from xml.etree import ElementTree as ET
 
 MONTH_NUM = {
@@ -28,8 +28,9 @@ GH_TOKEN = os.environ.get('GH_TOKEN', '')
 GROQ_KEY = os.environ.get('GROQ_KEY', '')
 NCBI_KEY = os.environ.get('NCBI_KEY', '')
 
-TODAY = str(date.today())
-FROM  = str(date.today() - timedelta(days=7))
+_now  = datetime.now(timezone.utc) + timedelta(hours=8)  # SGT = UTC+8
+TODAY = _now.strftime('%Y-%m-%d')
+FROM  = (_now - timedelta(days=7)).strftime('%Y-%m-%d')
 
 # ── Broad journals: need biology keyword filter ────────────────
 BROAD_JOURNALS = {
@@ -313,8 +314,7 @@ def main():
     # Save
     if not GIST_ID or not GH_TOKEN:
         print('❌ Cannot save — missing GIST_ID or GH_TOKEN')
-        print(json.dumps(result, indent=2))
-        return
+        sys.exit(1)
 
     status = save_to_gist(result)
     status_msg = {
@@ -323,6 +323,8 @@ def main():
         401: '❌ Auth failed — check GH_TOKEN scope (needs "gist")',
     }.get(status, f'❌ Unexpected HTTP {status}')
     print(status_msg)
+    if status != 200:
+        sys.exit(1)
 
     # Preview first 3
     print('\n── Preview ──')

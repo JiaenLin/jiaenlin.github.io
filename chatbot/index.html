@@ -90,6 +90,9 @@ textarea::placeholder{color:var(--faint)}
     </div>
   </div>
   <div style="display:flex;gap:6px">
+    <a class="hbtn" id="fullscreenBtn" href="javascript:void(0)" onclick="toggleFullscreen()" title="Fullscreen" style="display:none">
+      <svg id="fs-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+    </a>
     <a class="hbtn" id="themeBtn" href="javascript:void(0)" onclick="toggleTheme()" title="Toggle dark mode">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
     </a>
@@ -139,6 +142,11 @@ document.documentElement.lang = isZh ? 'zh-Hans' : 'en';
 // Show back button when opened as a standalone page on mobile (not in iframe)
 if (window.self === window.top && ('ontouchstart' in window) && window.innerWidth < 768) {
   document.getElementById('backBtn').style.display = 'flex';
+}
+
+// Show fullscreen button only when running inside the desktop iframe panel
+if (window.self !== window.top) {
+  document.getElementById('fullscreenBtn').style.display = 'flex';
 }
 
 const I18N = {
@@ -232,6 +240,21 @@ function getVisitorId() {
 let dark = false;
 setTheme(dark);
 function toggleTheme() { dark = !dark; setTheme(dark); }
+
+// ── Fullscreen (desktop iframe panel only) ───────────────────────
+let fsActive = false;
+function toggleFullscreen() {
+  try {
+    const panel = window.parent.document.getElementById('jl-panel');
+    if (!panel) return;
+    fsActive = !fsActive;
+    panel.classList.toggle('fullscreen', fsActive);
+    document.getElementById('fs-icon').outerHTML = fsActive
+      ? '<svg id="fs-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/></svg>'
+      : '<svg id="fs-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>';
+    document.getElementById('fullscreenBtn').title = fsActive ? 'Exit fullscreen' : 'Fullscreen';
+  } catch(e) {}
+}
 
 function setTheme(d) {
   document.documentElement.setAttribute("data-theme", d ? "dark" : "light");
