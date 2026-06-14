@@ -31,7 +31,7 @@ export default async function handler(req) {
         'Authorization': `Bearer ${process.env.AGNES_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ model: 'agnes-image-2.1-flash', prompt, n: 1, size: '1024x1024' }),
+      body: JSON.stringify({ model: 'agnes-image-2.1-flash', prompt, n: 1, size: '512x512' }),
       signal: controller.signal,
     });
     clearTimeout(timer);
