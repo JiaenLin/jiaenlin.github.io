@@ -153,7 +153,7 @@ const I18N = {
   en: {
     subtitle:    'Digital Twin · Computational Biologist',
     welcome:     'Hi! I\'m Jiaen Lin\'s AI digital twin Jayce\uD83E\uDDEC Ask me about my research in single-cell RNA-seq, multi-omics, or anything about my work and collaborations!',
-    placeholder: 'Ask Jayce anything…',
+    placeholder: 'Ask Jayce anything… or /image <prompt>',
     listening:   'Listening…',
     micTitle:    'Speak your question',
     micStop:     'Listening… click to stop',
@@ -170,7 +170,7 @@ const I18N = {
   zh: {
     subtitle:    'AI分身 · 计算生物学家',
     welcome:     '你好！我是林佳恩的AI数字分身Jayce🧬 你可以问我关于单细胞RNA测序、多组学研究，或任何关于我的工作与合作的问题！',
-    placeholder: '问Jayce任何问题…',
+    placeholder: '问Jayce任何问题… 或 /image <描述>',
     listening:   '正在聆听…',
     micTitle:    '语音提问',
     micStop:     '正在聆听… 点击停止',
@@ -298,6 +298,7 @@ function clearChat() {
   [...msgs.querySelectorAll(".row")].slice(1).forEach(r => r.remove());
   chipsEl.style.display = "flex";
   if (!document.getElementById('paper-chip')) chipsEl.prepend(buildPaperButton());
+  if (!document.getElementById('image-chip')) chipsEl.prepend(buildImageChip());
 }
 
 // ── Textarea auto-resize + enable send button ────────────────────
@@ -602,6 +603,21 @@ function toggleMic() {
 // ══════════════════════════════════════════════
 const WORKER_BASE = 'https://jiaenlin-github-io.vercel.app/api';
 
+function buildImageChip() {
+  const btn = document.createElement('a');
+  btn.className = 'chip';
+  btn.id        = 'image-chip';
+  btn.href      = 'javascript:void(0)';
+  btn.textContent = isZh ? '🎨 生成图像' : '🎨 Generate Image';
+  btn.onclick = function() {
+    if (streaming) return;
+    input.value = '/image ';
+    updateInput();
+    input.focus();
+  };
+  return btn;
+}
+
 function buildPaperButton() {
   const btn = document.createElement('a');
   btn.className   = 'chip';
@@ -794,6 +810,7 @@ function buildPaperButton() {
   return btn;
 }
 
+chipsEl.prepend(buildImageChip());
 chipsEl.prepend(buildPaperButton());
 </script>
 </body>
