@@ -21,32 +21,40 @@ export default async function handler(req) {
     { status: 400, headers: { 'Content-Type': 'application/json', ...CORS } }
   );
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 22000);
+  const enc = new TextEncoder();
+  const { readable, writable } = new TransformStream();
+  const writer = writable.getWriter();
 
-  try {
-    const resp = await fetch('https://apihub.agnes-ai.com/v1/images/generations', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.AGNES_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ model: 'agnes-image-2.1-flash', prompt, n: 1, size: '512x512' }),
-      signal: controller.signal,
-    });
-    clearTimeout(timer);
+  // Return stream immediately so Vercel sees a response — Agnes runs in the background
+  (async () => {
+    // Send SSE comment pings every 5s to keep the connection alive
+    let finished = false;
+    const ping = setInterval(() => {
+      if (!finished) writer.write(enc.encode(': ping\n\n'));
+    }, 5000);
 
-    const data = await resp.json();
-    return new Response(JSON.stringify(data), {
-      status: resp.ok ? 200 : 502,
-      headers: { 'Content-Type': 'application/json', ...CORS },
-    });
-  } catch (e) {
-    clearTimeout(timer);
-    const msg = e.name === 'AbortError' ? 'Image generation timed out (>22s)' : e.message;
-    return new Response(JSON.stringify({ error: msg }), {
-      status: 504,
-      headers: { 'Content-Type': 'application/json', ...CORS },
-    });
-  }
+    try {
+      const resp = await fetch('https://apihub.agnes-ai.com/v1/images/generations', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.AGNES_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ model: 'agnes-image-2.1-flash', prompt, n: 1, size: '1024x1024' }),
+      });
+      const data = await resp.json();
+      const payload = resp.ok ? { ok: true, ...data } : { ok: false, error: JSON.stringify(data) };
+      await writer.write(enc.encode(`data: ${JSON.stringify(payload)}\n\n`));
+    } catch (e) {
+      await writer.write(enc.encode(`data: ${JSON.stringify({ ok: false, error: e.message })}\n\n`));
+    } finally {
+      finished = true;
+      clearInterval(ping);
+      await writer.close();
+    }
+  })();
+
+  return new Response(readable, {
+    headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', ...CORS },
+  });
 }
