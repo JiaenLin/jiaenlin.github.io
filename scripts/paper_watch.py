@@ -23,10 +23,11 @@ def pub_date_sort_key(pub_date):
     return f'{year}-{month}-{day}'
 
 # ── Credentials ────────────────────────────────────────────────
-GIST_ID  = os.environ.get('GIST_ID',  '')
-GH_TOKEN = os.environ.get('GH_TOKEN', '')
-GROQ_KEY = os.environ.get('GROQ_KEY', '')
-NCBI_KEY = os.environ.get('NCBI_KEY', '')
+GIST_ID   = os.environ.get('GIST_ID',   '')
+GH_TOKEN  = os.environ.get('GH_TOKEN',  '')
+AGNES_KEY = os.environ.get('AGNES_KEY', '')
+GROQ_KEY  = os.environ.get('GROQ_KEY',  '')   # fallback if AGNES_KEY not set
+NCBI_KEY  = os.environ.get('NCBI_KEY',  '')
 
 _now  = datetime.now(timezone.utc) + timedelta(hours=8)  # SGT = UTC+8
 TODAY = _now.strftime('%Y-%m-%d')
@@ -215,39 +216,60 @@ def fetch_papers(journal_ta, journal_name, max_results=5, use_bio_filter=True):
 
     return papers
 
-# ── 2. Summarise with Groq (free) ──────────────────────────────
+# ── 2. Summarise with Agnes AI (fallback: Groq, then truncation) ──
 def summarise(abstract):
-    if not GROQ_KEY:
-        return ' '.join(abstract.split()[:22]) + '…'
-    try:
-        r = requests.post(
-            'https://api.groq.com/openai/v1/chat/completions',
-            headers={
-                'Authorization': f'Bearer {GROQ_KEY}',
-                'Content-Type':  'application/json',
-            },
-            json={
-                'model':       'llama-3.1-8b-instant',
-                'max_tokens':  60,
-                'temperature': 0.3,
-                'messages': [{
-                    'role':    'system',
-                    'content': (
-                        'Summarise this biology paper abstract in exactly '
-                        'one plain-English sentence under 25 words. '
-                        'Start with the key finding. No preamble.'
-                    )
-                }, {
-                    'role':    'user',
-                    'content': abstract
-                }]
-            },
-            timeout=20
-        )
-        return r.json()['choices'][0]['message']['content'].strip()
-    except Exception as e:
-        print(f'  Groq error: {e}')
-        return ' '.join(abstract.split()[:22]) + '…'
+    system_prompt = (
+        'Summarise this biology paper abstract in exactly '
+        'one plain-English sentence under 25 words. '
+        'Start with the key finding. No preamble.'
+    )
+    # Try Agnes first
+    if AGNES_KEY:
+        try:
+            r = requests.post(
+                'https://apihub.agnes-ai.com/v1/chat/completions',
+                headers={
+                    'Authorization': f'Bearer {AGNES_KEY}',
+                    'Content-Type':  'application/json',
+                },
+                json={
+                    'model':       'agnes-1.5-flash',
+                    'max_tokens':  60,
+                    'temperature': 0.3,
+                    'messages': [
+                        {'role': 'system', 'content': system_prompt},
+                        {'role': 'user',   'content': abstract}
+                    ]
+                },
+                timeout=20
+            )
+            return r.json()['choices'][0]['message']['content'].strip()
+        except Exception as e:
+            print(f'  Agnes error: {e}')
+    # Fallback: Groq
+    if GROQ_KEY:
+        try:
+            r = requests.post(
+                'https://api.groq.com/openai/v1/chat/completions',
+                headers={
+                    'Authorization': f'Bearer {GROQ_KEY}',
+                    'Content-Type':  'application/json',
+                },
+                json={
+                    'model':       'llama-3.1-8b-instant',
+                    'max_tokens':  60,
+                    'temperature': 0.3,
+                    'messages': [
+                        {'role': 'system', 'content': system_prompt},
+                        {'role': 'user',   'content': abstract}
+                    ]
+                },
+                timeout=20
+            )
+            return r.json()['choices'][0]['message']['content'].strip()
+        except Exception as e:
+            print(f'  Groq error: {e}')
+    return ' '.join(abstract.split()[:22]) + '…'
 
 # ── 3. Save to GitHub Gist ─────────────────────────────────────
 def save_to_gist(data):
@@ -273,9 +295,10 @@ def save_to_gist(data):
 def main():
     print(f'=== Paper Watch {TODAY} ===')
     print(f'Date range : {FROM} → {TODAY}')
-    print(f'GIST_ID    : {"✅" if GIST_ID  else "❌ MISSING"}')
-    print(f'GH_TOKEN   : {"✅" if GH_TOKEN else "❌ MISSING"}')
-    print(f'GROQ_KEY   : {"✅" if GROQ_KEY else "❌ MISSING"}')
+    print(f'GIST_ID    : {"✅" if GIST_ID   else "❌ MISSING"}')
+    print(f'GH_TOKEN   : {"✅" if GH_TOKEN  else "❌ MISSING"}')
+    print(f'AGNES_KEY  : {"✅ (primary)"   if AGNES_KEY else "⚠️ not set"}')
+    print(f'GROQ_KEY   : {"✅ (fallback)"  if GROQ_KEY  else "⚠️ not set"}')
     print(f'NCBI_KEY   : {"✅ (10 req/sec)" if NCBI_KEY else "⚠️ not set (3 req/sec)"}')
     print()
 

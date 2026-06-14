@@ -338,10 +338,55 @@ input.addEventListener("keydown", e => {
 
 
 
+// ── Image generation ─────────────────────────────────────────────
+async function sendImage(prompt) {
+  unlockSpeech();
+  chipsEl.style.display = "none";
+  addMsg("user", "/image " + prompt);
+  input.value = ""; input.style.height = "auto"; sendBtn.style.opacity = '0.4'; streaming = true;
+  typing.classList.add("on"); scroll();
+
+  const row    = makeRow("assistant");
+  const bubble = row.querySelector(".bubble");
+
+  try {
+    const res = await fetch(WORKER_BASE + '/image', {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt })
+    });
+    typing.classList.remove("on");
+    if (!res.ok) throw new Error("HTTP " + res.status);
+
+    const data = await res.json();
+    const img  = data.data?.[0];
+    if (img?.url) {
+      bubble.innerHTML = `<img src="${img.url}" alt="${prompt.replace(/"/g,'&quot;')}" style="max-width:100%;border-radius:10px;display:block;margin-top:4px">`;
+    } else if (img?.b64_json) {
+      bubble.innerHTML = `<img src="data:image/png;base64,${img.b64_json}" alt="${prompt.replace(/"/g,'&quot;')}" style="max-width:100%;border-radius:10px;display:block;margin-top:4px">`;
+    } else {
+      bubble.textContent = isZh ? '图像生成失败，请稍后再试。' : 'Image generation failed, please try again.';
+    }
+    msgs.appendChild(row); scroll();
+  } catch (err) {
+    typing.classList.remove("on");
+    bubble.innerHTML = `<span style="color:var(--muted)">${T.connError}</span>`;
+    if (!row.parentNode) msgs.appendChild(row);
+  } finally {
+    streaming = false;
+    sendBtn.style.opacity = input.value.trim() ? '1' : '0.4';
+    scroll();
+  }
+}
+
 // ── Send ─────────────────────────────────────────────────────────
 async function send() {
   const text = input.value.trim();
   if (!text || streaming) return;
+  if (text.startsWith('/image ')) {
+    const prompt = text.slice(7).trim();
+    if (prompt) { await sendImage(prompt); return; }
+  }
   unlockSpeech();
   chipsEl.style.display = "none";
   addMsg("user", text);
