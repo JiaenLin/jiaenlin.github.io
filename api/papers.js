@@ -1,0 +1,52 @@
+export const config = { runtime: 'edge' };
+
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
+
+function getSGTDate() {
+  return new Date(Date.now() + 8 * 3_600_000).toISOString().slice(0, 10);
+}
+function getSGTHour() {
+  return new Date(Date.now() + 8 * 3_600_000).getUTCHours();
+}
+
+export default async function handler(req) {
+  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
+
+  try {
+    const gistResp = await fetch(`https://api.github.com/gists/${process.env.GIST_ID}`, {
+      headers: {
+        'Authorization': `Bearer ${process.env.GH_TOKEN}`,
+        'Accept': 'application/vnd.github+json',
+        'User-Agent': 'jiaenlin-worker',
+      },
+    });
+    if (!gistResp.ok) throw new Error('Gist fetch failed: ' + gistResp.status);
+    const gist = await gistResp.json();
+    const data = JSON.parse(gist.files['paper_digest.json'].content);
+
+    const today     = getSGTDate();
+    const hour      = getSGTHour();
+    const yesterday = new Date(Date.now() + 8 * 3_600_000 - 86_400_000).toISOString().slice(0, 10);
+    const isValid   = data.date === today || (hour < 9 && data.date === yesterday);
+
+    if (!isValid) {
+      return new Response(JSON.stringify({
+        ready: false,
+        message: `Today's digest isn't ready yet — fetched at 9 AM SGT. Last update: ${data.date}`,
+      }), { headers: { 'Content-Type': 'application/json', ...CORS } });
+    }
+
+    return new Response(JSON.stringify({
+      ready: true, date: data.date, count: data.count, papers: data.papers,
+    }), { headers: { 'Content-Type': 'application/json', ...CORS } });
+
+  } catch (e) {
+    return new Response(JSON.stringify({ ready: false, message: 'Could not fetch papers: ' + e.message }), {
+      status: 500, headers: { 'Content-Type': 'application/json', ...CORS },
+    });
+  }
+}
