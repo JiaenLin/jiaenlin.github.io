@@ -69,6 +69,19 @@ textarea::placeholder{color:var(--faint)}
 .sendbtn[aria-disabled="true"]{opacity:.4;cursor:not-allowed;transform:none}
 
 @media(max-width:480px){.bubble{max-width:90%}.chips{flex-wrap:nowrap;overflow-x:auto}.chips::-webkit-scrollbar{display:none}}
+/* Image access gate */
+.gate-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:999;animation:in 200ms ease both}
+.gate-box{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:24px 20px;max-width:300px;width:90%;box-shadow:0 12px 40px rgba(0,0,0,0.18)}
+.gate-title{font-weight:700;font-size:1rem;margin-bottom:6px}
+.gate-desc{font-size:.82rem;color:var(--muted);margin-bottom:16px;line-height:1.55}
+.gate-error{font-size:.8rem;color:#e05050;margin-bottom:8px;display:none}
+.gate-input{width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--bg);font-family:var(--font);font-size:.9rem;color:var(--text);outline:none;margin-bottom:10px;transition:border-color 150ms}
+.gate-input:focus{border-color:var(--primary);box-shadow:0 0 0 3px color-mix(in oklch,var(--primary) 15%,transparent)}
+.gate-btn{width:100%;padding:10px;border-radius:10px;background:var(--primary);color:#fff;font-size:.9rem;font-weight:600;border:none;cursor:pointer;margin-bottom:14px;transition:background 150ms}
+.gate-btn:hover{background:var(--primary-h)}
+.gate-btn:disabled{opacity:.6;cursor:default}
+.gate-link{display:block;text-align:center;font-size:.8rem;color:var(--primary);text-decoration:none}
+.gate-link:hover{text-decoration:underline}
 .micbtn{width:40px;height:40px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 150ms;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
 .micbtn:hover{border-color:var(--primary);color:var(--primary)}
 .micbtn.listening{background:var(--primary);color:#fff;border-color:var(--primary);animation:mic-pulse 1s ease-in-out infinite}
@@ -339,8 +352,66 @@ input.addEventListener("keydown", e => {
 
 
 
+// ── Image access gate ────────────────────────────────────────────
+function showImageGate(onSuccess) {
+  const overlay = document.createElement('div');
+  overlay.className = 'gate-overlay';
+  overlay.innerHTML = `
+    <div class="gate-box">
+      <div class="gate-title">🔒 ${isZh ? '图像生成' : 'Image Generation'}</div>
+      <div class="gate-desc">${isZh ? '此功能仅限Jiaen的朋友使用。请输入访问码：' : "This feature is for Jiaen's friends. Enter your access code to unlock:"}</div>
+      <div class="gate-error" id="gate-error">${isZh ? '访问码有误，请重试。' : 'Incorrect code — please try again.'}</div>
+      <input class="gate-input" id="gate-input" type="password" placeholder="${isZh ? '输入访问码…' : 'Enter access code…'}" autocomplete="off">
+      <button class="gate-btn" id="gate-btn">${isZh ? '解锁' : 'Unlock'}</button>
+      <a class="gate-link" href="mailto:jiaenlin999@gmail.com?subject=${encodeURIComponent('Image Access Code Request')}&body=${encodeURIComponent('Hi Jiaen, I would like to request the image generation access code. Thanks!')}">${isZh ? '还没有访问码？联系Jiaen获取 →' : "Don't have a code? Request one from Jiaen →"}</a>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  const inp = overlay.querySelector('#gate-input');
+  const btn = overlay.querySelector('#gate-btn');
+  const err = overlay.querySelector('#gate-error');
+  inp.focus();
+
+  async function tryUnlock() {
+    const code = inp.value.trim();
+    if (!code) return;
+    btn.disabled = true;
+    btn.textContent = isZh ? '验证中…' : 'Checking…';
+    try {
+      const res = await fetch(WORKER_BASE + '/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ passcode: code })
+      });
+      if (res.ok) {
+        localStorage.setItem('jl_image_code', code);
+        overlay.remove();
+        onSuccess();
+      } else {
+        err.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = isZh ? '解锁' : 'Unlock';
+        inp.value = ''; inp.focus();
+      }
+    } catch {
+      err.style.display = 'block';
+      err.textContent = T.connError;
+      btn.disabled = false;
+      btn.textContent = isZh ? '解锁' : 'Unlock';
+    }
+  }
+
+  btn.addEventListener('click', tryUnlock);
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') tryUnlock(); });
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
 // ── Image generation ─────────────────────────────────────────────
 async function sendImage(prompt) {
+  // Gate check before showing any UI
+  const code = localStorage.getItem('jl_image_code');
+  if (!code) { showImageGate(() => sendImage(prompt)); return; }
+
   unlockSpeech();
   chipsEl.style.display = "none";
   addMsg("user", "/image " + prompt);
@@ -355,8 +426,19 @@ async function sendImage(prompt) {
     const res = await fetch(WORKER_BASE + '/image', {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt })
+      body: JSON.stringify({ prompt, passcode: code })
     });
+
+    // Stored code is wrong — clear it and re-gate
+    if (res.status === 401) {
+      localStorage.removeItem('jl_image_code');
+      row.remove();
+      [...msgs.querySelectorAll('.row.user')].at(-1)?.remove();
+      streaming = false;
+      sendBtn.style.opacity = input.value.trim() ? '1' : '0.4';
+      showImageGate(() => sendImage(prompt));
+      return;
+    }
     if (!res.ok) throw new Error("HTTP " + res.status);
 
     // Read SSE stream — server pings while Agnes generates, then sends the result

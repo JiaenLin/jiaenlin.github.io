@@ -15,6 +15,14 @@ export default async function handler(req) {
     return new Response('Invalid JSON', { status: 400, headers: CORS });
   }
 
+  // Passcode gate
+  if (!body.passcode || body.passcode !== process.env.IMAGE_PASSCODE) {
+    return new Response(JSON.stringify({ error: 'Invalid access code' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json', ...CORS },
+    });
+  }
+
   const prompt = (body.prompt || '').trim();
   if (!prompt) return new Response(
     JSON.stringify({ error: 'prompt required' }),
