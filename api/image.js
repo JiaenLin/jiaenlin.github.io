@@ -21,18 +21,32 @@ export default async function handler(req) {
     { status: 400, headers: { 'Content-Type': 'application/json', ...CORS } }
   );
 
-  const resp = await fetch('https://apihub.agnes-ai.com/v1/images/generations', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${process.env.AGNES_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ model: 'agnes-image-2.1-flash', prompt, n: 1, size: '1024x1024' }),
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 22000);
 
-  const data = await resp.json();
-  return new Response(JSON.stringify(data), {
-    status: resp.ok ? 200 : 502,
-    headers: { 'Content-Type': 'application/json', ...CORS },
-  });
+  try {
+    const resp = await fetch('https://apihub.agnes-ai.com/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.AGNES_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ model: 'agnes-image-2.1-flash', prompt, n: 1, size: '1024x1024' }),
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+
+    const data = await resp.json();
+    return new Response(JSON.stringify(data), {
+      status: resp.ok ? 200 : 502,
+      headers: { 'Content-Type': 'application/json', ...CORS },
+    });
+  } catch (e) {
+    clearTimeout(timer);
+    const msg = e.name === 'AbortError' ? 'Image generation timed out (>22s)' : e.message;
+    return new Response(JSON.stringify({ error: msg }), {
+      status: 504,
+      headers: { 'Content-Type': 'application/json', ...CORS },
+    });
+  }
 }
