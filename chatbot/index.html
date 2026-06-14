@@ -209,7 +209,7 @@ T.chips.forEach(({ label, prompt }) => {
 });
 
 // ── Core Setup ───────────────────────────────────────────────────
-const WORKER = "https://jiaen-digital-twin.jiaenlin999.workers.dev/chat";
+const WORKER = "https://jiaenlin-github-io.vercel.app/api/chat";
 let history = [], streaming = false;
 
 // Pre-cache voices so speak() never needs a setTimeout retry (iOS blocks
@@ -586,7 +586,7 @@ function toggleMic() {
 // ══════════════════════════════════════════════
 // TODAY'S PAPERS BUTTON
 // ══════════════════════════════════════════════
-const WORKER_BASE = 'https://jiaen-digital-twin.jiaenlin999.workers.dev';
+const WORKER_BASE = 'https://jiaenlin-github-io.vercel.app/api';
 
 function buildPaperButton() {
   const btn = document.createElement('a');

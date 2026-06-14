@@ -29,13 +29,14 @@ jobs:
 
       - name: Run paper watcher
         env:
-          GIST_ID:  ${{ secrets.GIST_ID }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          GROQ_KEY: ${{ secrets.GROQ_KEY }}
-          NCBI_KEY: ${{ secrets.NCBI_KEY }}
+          GIST_ID:   ${{ secrets.GIST_ID }}
+          GH_TOKEN:  ${{ secrets.GH_TOKEN }}
+          AGNES_KEY: ${{ secrets.AGNES_KEY }}
+          GROQ_KEY:  ${{ secrets.GROQ_KEY }}
+          NCBI_KEY:  ${{ secrets.NCBI_KEY }}
         run: python scripts/paper_watch.py
-      - name: Refresh Cloudflare Worker cache
+      - name: Refresh Vercel cache
         run: |
-          curl -s "https://jiaen-digital-twin.jiaenlin999.workers.dev/refresh"
+          curl -sf "https://jiaenlin-github-io.vercel.app/api/refresh"
       - name: Confirm output
         run: echo "Paper digest complete for $(date '+%Y-%m-%d')"
