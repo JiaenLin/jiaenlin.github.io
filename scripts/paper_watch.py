@@ -271,6 +271,88 @@ def summarise(abstract):
             print(f'  Groq error: {e}')
     return ' '.join(abstract.split()[:22]) + '…'
 
+# ── 2b. Generate overall "What's Happening Today" summary ────────
+def generate_overall_summary(papers):
+    """Synthesise all one-sentence summaries into a 3-5 sentence overview."""
+    if not papers:
+        return ''
+    summaries = '\n'.join(
+        f"{i+1}. [{p['journal']}] {p['summary']}"
+        for i, p in enumerate(papers)
+    )
+    prompt = (
+        "You are a research assistant synthesising today's paper digest for a computational biologist "
+        "(Jiaen Lin) who works in single-cell RNA-seq, multi-omics, and AI for biology. "
+        "Below are the one-sentence summaries of today's papers. "
+        "Write a concise, insightful 'What's Happening Today' overview (3-5 sentences, plain English, "
+        "no markdown) that connects the themes across these papers and highlights what's notable "
+        "for someone in computational biology / bioinformatics. Keep it informative but friendly.\n\n"
+        f"{summaries}\n\n"
+        "Now write the overview:"
+    )
+    system = 'You are a concise, insightful research summarizer. Respond in plain text without markdown formatting.'
+
+    # Try Agnes first
+    if AGNES_KEY:
+        try:
+            r = requests.post(
+                'https://apihub.agnes-ai.com/v1/chat/completions',
+                headers={
+                    'Authorization': f'Bearer {AGNES_KEY}',
+                    'Content-Type':  'application/json',
+                },
+                json={
+                    'model':       'agnes-2.0-flash',
+                    'max_tokens':  400,
+                    'temperature': 0.6,
+                    'stream':      False,
+                    'messages': [
+                        {'role': 'system', 'content': system},
+                        {'role': 'user',   'content': prompt},
+                    ],
+                },
+                timeout=30
+            )
+            summary = r.json()['choices'][0]['message']['content'].strip()
+            if summary:
+                return summary
+        except Exception as e:
+            print(f'  Overall summary Agnes error: {e}')
+
+    # Fallback: Groq
+    if GROQ_KEY:
+        try:
+            r = requests.post(
+                'https://api.groq.com/openai/v1/chat/completions',
+                headers={
+                    'Authorization': f'Bearer {GROQ_KEY}',
+                    'Content-Type':  'application/json',
+                },
+                json={
+                    'model':       'llama-3.1-8b-instant',
+                    'max_tokens':  400,
+                    'temperature': 0.6,
+                    'messages': [
+                        {'role': 'system', 'content': system},
+                        {'role': 'user',   'content': prompt},
+                    ],
+                },
+                timeout=30
+            )
+            summary = r.json()['choices'][0]['message']['content'].strip()
+            if summary:
+                return summary
+        except Exception as e:
+            print(f'  Overall summary Groq error: {e}')
+
+    # Hard fallback
+    journals = ', '.join(sorted(set(p['journal'] for p in papers)))
+    return (
+        f"Today's digest covers {len(papers)} papers across {journals}. "
+        f"Key themes emerging from today's research include advances in computational methods "
+        f"and biological discoveries relevant to multi-omics and single-cell analysis."
+    )
+
 # ── 3. Save to GitHub Gist ─────────────────────────────────────
 def save_to_gist(data):
     r = requests.patch(
@@ -328,10 +410,16 @@ def main():
 
     print(f'\n✅ Total: {len(all_papers)} papers across all journals')
 
+    # Generate overall "What's Happening Today" summary
+    print('\n── Generating overall summary ──')
+    overall_summary = generate_overall_summary(all_papers)
+    print(f'  → {overall_summary[:120]}…')
+
     result = {
-        'date':   TODAY,
-        'count':  len(all_papers),
-        'papers': all_papers,
+        'date':           TODAY,
+        'count':          len(all_papers),
+        'overallSummary': overall_summary,
+        'papers':         all_papers,
     }
 
     # Save
