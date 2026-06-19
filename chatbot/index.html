@@ -767,36 +767,75 @@ function buildPaperButton() {
       const bubble = loadRow.querySelector('.bubble');
       bubble.innerHTML = header;
 
-      // ── Overall "What's Happening" summary ──
+      // ── Overall "What's Happening" summary (foldable) ──
       if (data.overallSummary) {
         const summaryCard = document.createElement('div');
         summaryCard.style.cssText = [
           'background:var(--primary-l)',
           'border:1px solid var(--primary)',
           'border-radius:10px',
-          'padding:12px 14px',
+          'padding:10px 14px',
           'margin-bottom:14px',
           'line-height:1.65',
           'font-size:.84rem',
           'color:var(--text)',
         ].join(';');
 
-        const label = document.createElement('div');
+        const labelRow = document.createElement('div');
+        labelRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:4px';
+
+        const label = document.createElement('span');
         label.style.cssText = [
           'font-size:.7rem',
           'font-weight:700',
           'text-transform:uppercase',
           'letter-spacing:.07em',
           'color:var(--primary)',
-          'margin-bottom:6px',
         ].join(';');
         label.textContent = isZh ? '🧬 今日概览' : '🧬 What\'s Happening Today';
 
-        const summaryText = document.createElement('div');
-        summaryText.textContent = data.overallSummary;
+        labelRow.appendChild(label);
 
-        summaryCard.appendChild(label);
-        summaryCard.appendChild(summaryText);
+        const fullText = data.overallSummary;
+        const previewLen = 140;
+        const needsFold = fullText.length > previewLen;
+
+        const previewEl = document.createElement('div');
+        previewEl.textContent = needsFold ? fullText.slice(0, previewLen) + '…' : fullText;
+
+        const fullEl = document.createElement('div');
+        fullEl.textContent = fullText;
+        fullEl.style.display = 'none';
+
+        summaryCard.appendChild(labelRow);
+        summaryCard.appendChild(previewEl);
+        if (needsFold) {
+          summaryCard.appendChild(fullEl);
+
+          const toggleA = document.createElement('a');
+          toggleA.href = 'javascript:void(0)';
+          toggleA.style.cssText = [
+            'display:inline-block',
+            'font-size:.72rem',
+            'color:var(--primary)',
+            'text-decoration:none',
+            'margin-top:4px',
+            'user-select:none',
+          ].join(';');
+          toggleA.textContent = isZh ? '▶ 展开全文' : '▶ Read more';
+
+          toggleA.onclick = function() {
+            const expanded = fullEl.style.display !== 'none';
+            previewEl.style.display = expanded ? 'block' : 'none';
+            fullEl.style.display    = expanded ? 'none'  : 'block';
+            toggleA.textContent = expanded
+              ? (isZh ? '▶ 展开全文' : '▶ Read more')
+              : (isZh ? '▼ 收起' : '▼ Show less');
+          };
+
+          summaryCard.appendChild(toggleA);
+        }
+
         bubble.appendChild(summaryCard);
       }
 
