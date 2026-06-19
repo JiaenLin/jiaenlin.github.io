@@ -767,7 +767,7 @@ function buildPaperButton() {
       const bubble = loadRow.querySelector('.bubble');
       bubble.innerHTML = header;
 
-      // ── Overall "What's Happening" summary (foldable) ──
+      // ── Overall "What's Happening" summary (foldable, ≤20 words preview) ──
       if (data.overallSummary) {
         const summaryCard = document.createElement('div');
         summaryCard.style.cssText = [
@@ -795,23 +795,20 @@ function buildPaperButton() {
         label.textContent = isZh ? '🧬 今日概览' : '🧬 What\'s Happening Today';
 
         labelRow.appendChild(label);
+        summaryCard.appendChild(labelRow);
 
         const fullText = data.overallSummary;
-        const previewLen = 140;
-        const needsFold = fullText.length > previewLen;
+        const words = fullText.split(/\s+/);
+        const previewWords = 20;
+        const needsFold = words.length > previewWords;
+        const previewText = words.slice(0, previewWords).join(' ') + '…';
 
-        const previewEl = document.createElement('div');
-        previewEl.textContent = needsFold ? fullText.slice(0, previewLen) + '…' : fullText;
+        const textEl = document.createElement('div');
+        textEl.textContent = needsFold ? previewText : fullText;
+        summaryCard.appendChild(textEl);
 
-        const fullEl = document.createElement('div');
-        fullEl.textContent = fullText;
-        fullEl.style.display = 'none';
-
-        summaryCard.appendChild(labelRow);
-        summaryCard.appendChild(previewEl);
         if (needsFold) {
-          summaryCard.appendChild(fullEl);
-
+          let expanded = false;
           const toggleA = document.createElement('a');
           toggleA.href = 'javascript:void(0)';
           toggleA.style.cssText = [
@@ -819,18 +816,20 @@ function buildPaperButton() {
             'font-size:.72rem',
             'color:var(--primary)',
             'text-decoration:none',
-            'margin-top:4px',
+            'margin-top:3px',
+            'cursor:pointer',
             'user-select:none',
+            '-webkit-user-select:none',
           ].join(';');
           toggleA.textContent = isZh ? '▶ 展开全文' : '▶ Read more';
 
-          toggleA.onclick = function() {
-            const expanded = fullEl.style.display !== 'none';
-            previewEl.style.display = expanded ? 'block' : 'none';
-            fullEl.style.display    = expanded ? 'none'  : 'block';
+          toggleA.onclick = function(e) {
+            e.preventDefault();
+            expanded = !expanded;
+            textEl.textContent = expanded ? fullText : previewText;
             toggleA.textContent = expanded
-              ? (isZh ? '▶ 展开全文' : '▶ Read more')
-              : (isZh ? '▼ 收起' : '▼ Show less');
+              ? (isZh ? '▼ 收起' : '▼ Show less')
+              : (isZh ? '▶ 展开全文' : '▶ Read more');
           };
 
           summaryCard.appendChild(toggleA);
