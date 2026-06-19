@@ -284,11 +284,11 @@ def generate_overall_summary(papers):
         "You are a research assistant synthesising today's paper digest for a computational biologist "
         "(Jiaen Lin) who works in single-cell RNA-seq, multi-omics, and AI for biology. "
         "Below are the one-sentence summaries of today's papers. "
-        "Write a concise, insightful 'What's Happening Today' overview (3-5 sentences, plain English, "
+        "Write a concise, insightful 'What's Happening Today' overview (under 100 words, plain English, "
         "no markdown) that connects the themes across these papers and highlights what's notable "
         "for someone in computational biology / bioinformatics. Keep it informative but friendly.\n\n"
         f"{summaries}\n\n"
-        "Now write the overview:"
+        "Now write the overview (under 100 words):"
     )
     system = 'You are a concise, insightful research summarizer. Respond in plain text without markdown formatting.'
 
@@ -303,7 +303,7 @@ def generate_overall_summary(papers):
                 },
                 json={
                     'model':       'agnes-2.0-flash',
-                    'max_tokens':  400,
+                    'max_tokens':  150,
                     'temperature': 0.6,
                     'stream':      False,
                     'messages': [
@@ -330,7 +330,7 @@ def generate_overall_summary(papers):
                 },
                 json={
                     'model':       'llama-3.1-8b-instant',
-                    'max_tokens':  400,
+                    'max_tokens':  150,
                     'temperature': 0.6,
                     'messages': [
                         {'role': 'system', 'content': system},
