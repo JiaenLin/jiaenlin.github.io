@@ -799,7 +799,7 @@ function buildPaperButton() {
 
         const fullText = data.overallSummary;
         const words = fullText.split(/\s+/);
-        const previewWords = 20;
+        const previewWords = 10;
         const needsFold = words.length > previewWords;
         const previewText = words.slice(0, previewWords).join(' ') + '…';
 
