@@ -723,7 +723,7 @@ function buildPaperButton() {
     scroll();
 
     try {
-      const data = await fetch(`${WORKER_BASE}/papers`).then(r => r.json());
+      const data = await fetch(`${WORKER_BASE}/digest`).then(r => r.json());
 
       if (!data.ready) {
         loadRow.querySelector('.bubble').innerHTML =
@@ -747,6 +747,13 @@ function buildPaperButton() {
           : `Today's Papers — ${data.date} (${data.count} papers)`,
         ''
       ];
+      if (data.overallSummary) {
+        lines.push(
+          isZh ? '🧬 今日概览' : '🧬 What\'s Happening Today',
+          data.overallSummary,
+          ''
+        );
+      }
       Object.entries(byJournal).forEach(([journal, papers]) => {
         lines.push(`=== ${journal} ===`, '');
         papers.forEach(p => { lines.push(p.title, p.authors + (p.pub_date ? ` · ${p.pub_date}` : ''), `💡 ${p.summary}`, p.url, ''); });
@@ -759,6 +766,39 @@ function buildPaperButton() {
 
       const bubble = loadRow.querySelector('.bubble');
       bubble.innerHTML = header;
+
+      // ── Overall "What's Happening" summary ──
+      if (data.overallSummary) {
+        const summaryCard = document.createElement('div');
+        summaryCard.style.cssText = [
+          'background:var(--primary-l)',
+          'border:1px solid var(--primary)',
+          'border-radius:10px',
+          'padding:12px 14px',
+          'margin-bottom:14px',
+          'line-height:1.65',
+          'font-size:.84rem',
+          'color:var(--text)',
+        ].join(';');
+
+        const label = document.createElement('div');
+        label.style.cssText = [
+          'font-size:.7rem',
+          'font-weight:700',
+          'text-transform:uppercase',
+          'letter-spacing:.07em',
+          'color:var(--primary)',
+          'margin-bottom:6px',
+        ].join(';');
+        label.textContent = isZh ? '🧬 今日概览' : '🧬 What\'s Happening Today';
+
+        const summaryText = document.createElement('div');
+        summaryText.textContent = data.overallSummary;
+
+        summaryCard.appendChild(label);
+        summaryCard.appendChild(summaryText);
+        bubble.appendChild(summaryCard);
+      }
 
       // Expand all / Collapse all
       const toggleAllWrap = document.createElement('div');
