@@ -48,33 +48,45 @@ ${summaries}
 
 Now write the overview:`;
 
-    const aiResp = await fetch('https://apihub.agnes-ai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.AGNES_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'agnes-2.0-flash',
-        messages: [
-          { role: 'system', content: 'You are a concise, insightful research summarizer. Respond in plain text without markdown formatting.' },
-          { role: 'user', content: prompt },
-        ],
-        max_tokens: 400,
-        temperature: 0.6,
-      }),
-    });
+    // Call Agnes AI with a 15s timeout (33 papers = large prompt)
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15_000);
 
     let overallSummary = '';
-    if (aiResp.ok) {
-      const aiJson = await aiResp.json();
-      overallSummary = aiJson.choices?.[0]?.message?.content?.trim() || '';
+    try {
+      const aiResp = await fetch('https://apihub.agnes-ai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.AGNES_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'agnes-2.0-flash',
+          messages: [
+            { role: 'system', content: 'You are a concise, insightful research summarizer. Respond in plain text without markdown formatting.' },
+            { role: 'user', content: prompt },
+          ],
+          max_tokens: 400,
+          temperature: 0.6,
+          stream: false,
+        }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+
+      if (aiResp.ok) {
+        const aiJson = await aiResp.json();
+        overallSummary = aiJson.choices?.[0]?.message?.content?.trim() || '';
+      }
+    } catch (_) {
+      clearTimeout(timeout);
+      /* AI call failed or timed out — fallback below will handle it */
     }
 
-    // Fallback if AI call fails
+    // Fallback if AI call fails or returns empty
     if (!overallSummary) {
-      const themes = data.papers.map(p => p.summary).join(' ');
-      overallSummary = `Today's digest covers ${data.count} papers across fields including ${data.papers.map(p => p.journal).filter((v, i, a) => a.indexOf(v) === i).join(', ')}. Key themes emerging from today's research include advances in computational methods and biological discoveries relevant to multi-omics and single-cell analysis.`;
+      const journals = [...new Set(data.papers.map(p => p.journal))].join(', ');
+      overallSummary = `Today's digest covers ${data.count} papers across ${journals}. Key themes emerging from today's research include advances in computational methods and biological discoveries relevant to multi-omics and single-cell analysis.`;
     }
 
     return new Response(JSON.stringify({
